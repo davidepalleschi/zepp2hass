@@ -114,7 +114,7 @@ This will be the endpoint that the app will send the sleep data to.
 
 ## Step 4 - Change the endpoint in the app
 
-You need to edit, build the app and install it on your phone.
+You need to edit, build the app and install it on your watch.
 
 First, install Node.js and NPM on your computer.
 
@@ -165,17 +165,45 @@ Open the ZEPP app on your phone, and scan the QR code.
 
 Now you can see the app on your watch's app list.
 
-## Step 7 - Configure the app to send the data
+## Step 7 - Start the background service (First time only)
 
-Open the app on your watch, click the start button, and the app will start to send the sleep data to your server.
+Open the app on your watch and tap the start button to grant background service permission and start the service.
 
 ![app-running](./assets/running.png)
 
-And you must disable the `Enable Sleep Mode` feature in the clock: `Sleep` -> `Settings` -> `Sleep Plan` -> `Enable Sleep Mode`. This is because the app will not work when the watch is in sleep mode.
+**Important:** 
+- Grant the background service permission when prompted (required for continuous monitoring)
+- The app will automatically start the background service every time you open it
+- Once started, the service will run continuously in the background and send metrics every 5 minutes
+- The service will continue running even when the watch enters sleep mode (if properly configured in watch settings)
 
-And **NEVER** enter sleep mode for your watch!!! Because the app will stop working when the watch is in sleep mode.
+### About Sleep Mode
 
-## Step 8 - View the data on the server
+By default, the watch may suspend background services during sleep mode to conserve battery. To ensure continuous monitoring:
+
+1. Go to your watch **Settings** → **Battery** (or **Power Management**)
+2. Find **Background Apps** or **App Autostart** settings
+3. Enable background operation for the Sleep Agent app
+4. You may also need to add the app to a whitelist of apps allowed to run during sleep
+
+If you cannot find these settings or prefer not to modify them, you can alternatively:
+
+- Disable the `Enable Sleep Mode` feature: Go to **Sleep** → **Settings** → **Sleep Plan** → Uncheck **Enable Sleep Mode**
+- This will prevent the watch from entering deep sleep mode, allowing the app to work continuously but will consume more battery
+
+## Step 8 - Verify the background service is running
+
+After starting the service, you can verify it's working:
+
+1. Close the app on your watch (press the back button)
+2. Wait a few minutes
+3. Go to watch **Settings** → **Battery** → **Background Apps** (or similar)
+4. You should see "Sleep Agent" listed with a non-zero runtime (not "0 sec")
+5. If you see "0 sec", the service might not be running - try opening the app again
+
+Alternatively, you can check if data is being sent to your server (see next step).
+
+## Step 9 - View the data on the server
 
 Wait 5-10 minutes, and you can view the metrics data on your server.
 
@@ -276,9 +304,9 @@ You may see:
 
 Now you can save the JSON or teleport it to other monitoring systems like Prometheus or Grafana.
 
-## Step 9 - Scrap the data with Prometheus
+## Step 10 - Scrape the data with Prometheus
 
-You can scrap the data with Prometheus.
+You can scrape the data with Prometheus.
 
 First, you need to create a new Prometheus server. You can start it with Docker:
 
@@ -314,7 +342,7 @@ sudo docker restart prometheus
 
 Now open the Prometheus server at `http://localhost:9090`, and you can see the metrics data.
 
-## Step 10 - Visualize the data with Grafana
+## Step 11 - Visualize the data with Grafana
 
 You can visualize the data with Grafana.
 

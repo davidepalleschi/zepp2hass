@@ -29,7 +29,8 @@
     "data:os.device.info",
 
     "device:os.bg_service",
-    "device:os.notification"
+    "device:os.notification",
+    "device:os.alarm"
   ],
   "runtime": {
     "apiVersion": {
