@@ -1,0 +1,11 @@
+{
+  "domain": "zepp2hass",
+  "name": "Zepp2Hass",
+  "version": "0.1.0",
+  "documentation": "https://github.com/davidepalleschi/zepp2homeassistant",
+  "issue_tracker": "https://github.com/davidepalleschi/zepp2homeassistant/issues",
+  "requirements": [],
+  "codeowners": ["@davidepalleschi"],
+  "iot_class": "local_push",
+  "config_flow": true
+}
