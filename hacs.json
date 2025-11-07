@@ -2,6 +2,7 @@
   "name": "Zepp2Hass",
   "hacs": "1.6.0",
   "domains": ["sensor"],
-  "iot_class": "Local Push"
+  "iot_class": "Local Push",
+  "render_readme": true
 }
 
