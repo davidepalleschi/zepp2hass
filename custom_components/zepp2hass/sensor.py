@@ -7,11 +7,12 @@ from typing import Any
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.const import PERCENTAGE
 
-from .const import DOMAIN, SIGNAL_UPDATE
+from .const import DOMAIN, SIGNAL_UPDATE, WEBHOOK_BASE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,11 +94,35 @@ async def async_setup_entry(
     device_name = entry.data.get("name", "Unknown")
     entry_id = entry.entry_id
 
+    # Get webhook URL from domain data, or calculate it if not available
+    webhook_full_url = hass.data.get(DOMAIN, {}).get(entry_id, {}).get("webhook_full_url", "")
+    
+    # Fallback: calculate webhook URL if not stored yet
+    if not webhook_full_url:
+        base_url = hass.config.external_url or hass.config.internal_url or "http://localhost:8123"
+        slug = _slugify_device_name(device_name)
+        webhook_path = f"{WEBHOOK_BASE}/{slug}"
+        webhook_full_url = f"{base_url}{webhook_path}"
+
     # Create sensors
     sensors = [
         Zepp2HassSensor(entry_id, device_name, sensor_def) for sensor_def in SENSOR_DEFINITIONS
     ]
+    
+    # Add webhook URL sensor
+    sensors.append(Zepp2HassWebhookSensor(entry_id, device_name, webhook_full_url))
+    
     async_add_entities(sensors)
+
+
+def _slugify_device_name(name: str) -> str:
+    """Simple slugify for device name → used in endpoint path."""
+    if not name:
+        return "unknown"
+    s = name.lower()
+    for ch in " /\\:.,@":
+        s = s.replace(ch, "_")
+    return "".join(c for c in s if (c.isalnum() or c == "_"))
 
 
 class Zepp2HassSensor(SensorEntity):
@@ -119,6 +144,16 @@ class Zepp2HassSensor(SensorEntity):
         self._attr_icon = self._icon
         self._attr_native_unit_of_measurement = self._unit
         self._attr_native_value = None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=self._device_name,
+        )
 
     @property
     def available(self) -> bool:
@@ -159,5 +194,55 @@ class Zepp2HassSensor(SensorEntity):
         """Update the sensor.
         
         Passive sensors, updated only via webhook.
+        """
+        pass
+
+
+class Zepp2HassWebhookSensor(SensorEntity):
+    """Sensor that displays the webhook URL for easy access."""
+
+    _attr_icon = "mdi:webhook"
+    _attr_entity_registry_enabled_default = True
+
+    def __init__(self, entry_id: str, device_name: str, webhook_url: str) -> None:
+        """Initialize the webhook URL sensor."""
+        self._entry_id = entry_id
+        self._device_name = device_name
+        self._attr_name = f"{device_name} Webhook URL"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_webhook_url"
+        self._attr_native_value = webhook_url
+        self._attr_native_unit_of_measurement = None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=self._device_name,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return bool(self._attr_native_value)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Return extra state attributes."""
+        # Calculate webhook path using same slugify logic
+        slug = _slugify_device_name(self._device_name)
+        webhook_path = f"{WEBHOOK_BASE}/{slug}"
+        
+        return {
+            "webhook_path": webhook_path,
+            "instructions": "Use this URL in your Zepp app/automation to send POST requests with JSON data",
+        }
+
+    async def async_update(self) -> None:
+        """Update the sensor.
+        
+        Static sensor, value doesn't change.
         """
         pass

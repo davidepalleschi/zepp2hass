@@ -7,6 +7,7 @@ from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 from .const import DOMAIN, SIGNAL_UPDATE, WEBHOOK_BASE
@@ -41,10 +42,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.error("Failed to register webhook view: %s", exc)
             raise ConfigEntryNotReady(f"Failed to register webhook: {exc}") from exc
 
-        # Keep view reference so we can possibly unregister in future (not strictly required)
-        hass.data[DOMAIN][entry_id] = {"view": view}
+        # Get Home Assistant base URL for full webhook URL
+        base_url = hass.config.external_url or hass.config.internal_url or "http://localhost:8123"
+        full_webhook_url = f"{base_url}{url}"
 
-        _LOGGER.info("Registered Zepp2Hass webhook for %s at %s", device_name, url)
+        # Register device in device registry
+        device_registry = dr.async_get(hass)
+        device_registry.async_get_or_create(
+            config_entry_id=entry_id,
+            identifiers={(DOMAIN, entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=device_name,
+            configuration_url=full_webhook_url if base_url != "http://localhost:8123" else None,
+        )
+
+        # Keep view reference and webhook URL so sensors can access it
+        hass.data[DOMAIN][entry_id] = {
+            "view": view,
+            "webhook_url": url,
+            "webhook_full_url": full_webhook_url,
+        }
+        
+        _LOGGER.info(
+            "Registered Zepp2Hass webhook for %s\n"
+            "  Webhook path: %s\n"
+            "  Full URL: %s\n"
+            "  Use this URL in your Zepp app/automation to send data",
+            device_name, url, full_webhook_url
+        )
 
         # Forward setup to sensor platform
         await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
