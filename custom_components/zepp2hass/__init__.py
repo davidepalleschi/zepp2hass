@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("Registered Zepp2Hass webhook for %s at %s", device_name, url)
 
     # Forward setup to sensor platform
-    await hass.config_entries.async_forward_entry_setup(entry, "sensor")
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
     return True
 
@@ -55,7 +55,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # We leave the view in place (it will still function only if data remains), but clear state.
         data.pop(entry_id)
     # Unload platforms
-    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
+    await hass.config_entries.async_forward_entry_unloads(entry, ["sensor"])
     return True
 
 
