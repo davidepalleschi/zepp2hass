@@ -144,13 +144,16 @@ class Zepp2HassSensor(SensorEntity):
 
     async def async_update_from_payload(self, payload: dict[str, Any]) -> None:
         """Update sensor from webhook payload."""
-        if self._key in payload:
-            raw_val = payload[self._key]
-            new_val = self._format_value(raw_val)
-            if new_val != self._attr_native_value:
-                _LOGGER.debug("Updating %s -> %s", self.entity_id, new_val)
-                self._attr_native_value = new_val
-                self.async_write_ha_state()
+        try:
+            if self._key in payload:
+                raw_val = payload[self._key]
+                new_val = self._format_value(raw_val)
+                if new_val != self._attr_native_value:
+                    _LOGGER.debug("Updating %s -> %s", self.entity_id, new_val)
+                    self._attr_native_value = new_val
+                    self.async_write_ha_state()
+        except Exception as exc:
+            _LOGGER.error("Error updating sensor %s from payload: %s", self.entity_id, exc, exc_info=True)
 
     async def async_update(self) -> None:
         """Update the sensor.
