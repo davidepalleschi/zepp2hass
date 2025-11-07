@@ -1,7 +1,7 @@
 {
   "domain": "zepp2hass",
   "name": "Zepp2Hass",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "documentation": "https://github.com/davidepalleschi/zepp2homeassistant",
   "issue_tracker": "https://github.com/davidepalleschi/zepp2homeassistant/issues",
   "requirements": [],
