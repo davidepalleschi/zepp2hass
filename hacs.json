@@ -1,8 +1,6 @@
 {
   "name": "Zepp2Hass",
-  "hacs": "1.6.0",
-  "domains": ["sensor"],
-  "iot_class": "Local Push",
+  "homeassistant": "2022.9",
   "render_readme": true
 }
 
