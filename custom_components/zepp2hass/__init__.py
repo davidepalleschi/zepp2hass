@@ -1,6 +1,7 @@
 """The Zepp2Hass integration."""
 from __future__ import annotations
 
+import json
 import logging
 from aiohttp import web
 
@@ -115,6 +116,112 @@ class _ZeppWebhookView(HomeAssistantView):
         """Initialize the webhook view."""
         self.hass = hass
         self.entry_id = entry_id
+
+    async def get(self, request: web.Request) -> web.Response:
+        """Handle GET request - display latest JSON payload in browser."""
+        # Get latest payload from storage
+        latest_payload = None
+        try:
+            entry_data = self.hass.data.get(DOMAIN, {}).get(self.entry_id, {})
+            latest_payload = entry_data.get("latest")
+        except Exception:
+            pass
+
+        # Create HTML page
+        html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zepp2Hass Webhook - Latest Data</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #03a9f4;
+            margin-top: 0;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .no-data {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            color: #e65100;
+        }
+        pre {
+            background-color: #263238;
+            color: #aed581;
+            padding: 20px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .refresh-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #03a9f4;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .refresh-btn:hover {
+            background-color: #0288d1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zepp2Hass Webhook</h1>
+"""
+        
+        if latest_payload:
+            # Format JSON with indentation and escape HTML special characters
+            json_str = json.dumps(latest_payload, indent=2, ensure_ascii=False)
+            # Escape HTML special characters
+            json_str = json_str.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            html_content += f"""
+        <div class="info">
+            <strong>Latest data received from your Zepp watch:</strong>
+        </div>
+        <pre>{json_str}</pre>
+"""
+        else:
+            html_content += """
+        <div class="no-data">
+            <strong>No data received yet.</strong><br>
+            Send a POST request to this webhook URL from your Zepp app/automation to see the data here.
+        </div>
+"""
+        
+        html_content += """
+        <a href="#" class="refresh-btn" onclick="location.reload(); return false;">Refresh Page</a>
+    </div>
+</body>
+</html>
+"""
+        
+        return web.Response(text=html_content, content_type="text/html")
 
     async def post(self, request: web.Request) -> web.Response:
         """Handle POST request from webhook."""
