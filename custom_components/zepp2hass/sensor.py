@@ -45,115 +45,113 @@ SLEEP_STATUS_MAP = {
 SENSOR_DEFINITIONS = [
     # Record time
     ("record_time", "record_time", "Record Time", None, "mdi:calendar-clock", None, EntityCategory.DIAGNOSTIC),
-    
+
     # User information - Diagnostic category
     ("user.age", "user_age", "User Age", "yrs", "mdi:account", None, EntityCategory.DIAGNOSTIC),
     ("user.height", "user_height", "User Height", "m", "mdi:ruler", None, EntityCategory.DIAGNOSTIC),
     ("user.weight", "user_weight", "User Weight", "kg", "mdi:weight-kilogram", None, EntityCategory.DIAGNOSTIC),
     ("user.gender", "user_gender", "User Gender", None, "mdi:gender-male-female", "format_gender", EntityCategory.DIAGNOSTIC),
-    ("user.nickName", "user_nickname", "User Nickname", None, "mdi:account-badge", None, EntityCategory.DIAGNOSTIC),
+    ("user.nickName", "user_nickname", "User Nick Name", None, "mdi:account-badge", None, EntityCategory.DIAGNOSTIC),
     ("user.region", "user_region", "User Region", None, "mdi:earth", None, EntityCategory.DIAGNOSTIC),
-    ("user.birth.year", "user_birth_year", "Birth Year", None, "mdi:calendar", None, EntityCategory.DIAGNOSTIC),
-    ("user.birth.month", "user_birth_month", "Birth Month", None, "mdi:calendar-month", None, EntityCategory.DIAGNOSTIC),
-    ("user.birth.day", "user_birth_day", "Birth Day", None, "mdi:calendar-day", None, EntityCategory.DIAGNOSTIC),
-    ("user.appVersion", "user_app_version", "App Version", None, "mdi:cellphone-information", None, EntityCategory.DIAGNOSTIC),
-    ("user.appPlatform", "user_app_platform", "App Platform", None, "mdi:platform", None, EntityCategory.DIAGNOSTIC),
-    ("user.uuid", "user_uuid", "User UUID", None, "mdi:identifier", None, EntityCategory.DIAGNOSTIC),
-    
+    ("user.birth", "user_birth_date", "User Birth Date", None, "mdi:calendar", "format_birth_date", EntityCategory.DIAGNOSTIC),
+    ("user.appVersion", "user_app_version", "User App Version", None, "mdi:cellphone-information", None, EntityCategory.DIAGNOSTIC),
+    ("user.appPlatform", "user_app_platform", "User App Platform", None, "mdi:store-clock", None, EntityCategory.DIAGNOSTIC),
+    ("user.uuid", "user_uuid", "User Uuid", None, "mdi:identifier", None, EntityCategory.DIAGNOSTIC),
+
     # Device information - Diagnostic category
     ("device.width", "device_width", "Device Width", "px", "mdi:tablet", None, EntityCategory.DIAGNOSTIC),
     ("device.height", "device_height", "Device Height", "px", "mdi:tablet", None, EntityCategory.DIAGNOSTIC),
-    ("device.screenShape", "device_screen_shape", "Screen Shape", None, "mdi:crop-square", None, EntityCategory.DIAGNOSTIC),
+    ("device.screenShape", "device_screen_shape", "Device Screen Shape", None, "mdi:crop-square", None, EntityCategory.DIAGNOSTIC),
     ("device.deviceName", "device_name", "Device Name", None, "mdi:watch-variant", None, EntityCategory.DIAGNOSTIC),
-    ("device.keyNumber", "device_key_number", "Key Number", None, "mdi:key", None, EntityCategory.DIAGNOSTIC),
-    ("device.keyType", "device_key_type", "Key Type", None, "mdi:key-chain", None, EntityCategory.DIAGNOSTIC),
+    ("device.keyNumber", "device_key_number", "Device Key Number", None, "mdi:key", None, EntityCategory.DIAGNOSTIC),
+    ("device.keyType", "device_key_type", "Device Key Type", None, "mdi:key-chain", None, EntityCategory.DIAGNOSTIC),
     ("device.deviceSource", "device_source", "Device Source", None, "mdi:server", None, EntityCategory.DIAGNOSTIC),
     ("device.deviceColor", "device_color", "Device Color", None, "mdi:palette", None, EntityCategory.DIAGNOSTIC),
-    ("device.productId", "device_product_id", "Product ID", None, "mdi:barcode", None, EntityCategory.DIAGNOSTIC),
-    ("device.productVer", "device_product_ver", "Product Version", None, "mdi:tag", None, EntityCategory.DIAGNOSTIC),
-    ("device.skuId", "device_sku_id", "SKU ID", None, "mdi:tag-outline", None, EntityCategory.DIAGNOSTIC),
-    ("device.barHeight", "device_bar_height", "Bar Height", "px", "mdi:view-dashboard", None, EntityCategory.DIAGNOSTIC),
-    ("device.bleAddr", "device_ble_addr", "BLE Address", None, "mdi:bluetooth", None, EntityCategory.DIAGNOSTIC),
-    ("device.btAddr", "device_bt_addr", "BT Address", None, "mdi:bluetooth-connect", None, EntityCategory.DIAGNOSTIC),
-    ("device.wifiAddr", "device_wifi_addr", "WiFi Address", None, "mdi:wifi", None, EntityCategory.DIAGNOSTIC),
-    ("device.pixelFormat", "device_pixel_format", "Pixel Format", None, "mdi:monitor", None, EntityCategory.DIAGNOSTIC),
-    ("device.uuid", "device_uuid", "Device UUID", None, "mdi:identifier", None, EntityCategory.DIAGNOSTIC),
-    ("device.hasNFC", "device_has_nfc", "Has NFC", None, "mdi:nfc", "format_bool", EntityCategory.DIAGNOSTIC),
-    ("device.hasMic", "device_has_mic", "Has Microphone", None, "mdi:microphone", "format_bool", EntityCategory.DIAGNOSTIC),
-    ("device.hasCrown", "device_has_crown", "Has Crown", None, "mdi:watch", "format_bool", EntityCategory.DIAGNOSTIC),
-    ("device.hasBuzzer", "device_has_buzzer", "Has Buzzer", None, "mdi:bell", "format_bool", EntityCategory.DIAGNOSTIC),
-    ("device.hasSpeaker", "device_has_speaker", "Has Speaker", None, "mdi:volume-high", "format_bool", EntityCategory.DIAGNOSTIC),
-    
+    ("device.productId", "device_product_id", "Device Product Id", None, "mdi:barcode", None, EntityCategory.DIAGNOSTIC),
+    ("device.productVer", "device_product_ver", "Device Product Ver", None, "mdi:tag", None, EntityCategory.DIAGNOSTIC),
+    ("device.skuId", "device_sku_id", "Device Sku Id", None, "mdi:tag-outline", None, EntityCategory.DIAGNOSTIC),
+    ("device.barHeight", "device_bar_height", "Device Bar Height", "px", "mdi:view-dashboard", None, EntityCategory.DIAGNOSTIC),
+    ("device.bleAddr", "device_ble_addr", "Device Ble Addr", None, "mdi:bluetooth", None, EntityCategory.DIAGNOSTIC),
+    ("device.btAddr", "device_bt_addr", "Device Bt Addr", None, "mdi:bluetooth-connect", None, EntityCategory.DIAGNOSTIC),
+    ("device.wifiAddr", "device_wifi_addr", "Device Wifi Addr", None, "mdi:wifi", None, EntityCategory.DIAGNOSTIC),
+    ("device.pixelFormat", "device_pixel_format", "Device Pixel Format", None, "mdi:monitor", None, EntityCategory.DIAGNOSTIC),
+    ("device.uuid", "device_uuid", "Device Uuid", None, "mdi:identifier", None, EntityCategory.DIAGNOSTIC),
+    ("device.hasNFC", "device_has_nfc", "Device Has Nfc", None, "mdi:nfc", "format_bool", EntityCategory.DIAGNOSTIC),
+    ("device.hasMic", "device_has_mic", "Device Has Mic", None, "mdi:microphone", "format_bool", EntityCategory.DIAGNOSTIC),
+    ("device.hasCrown", "device_has_crown", "Device Has Crown", None, "mdi:watch", "format_bool", EntityCategory.DIAGNOSTIC),
+    ("device.hasBuzzer", "device_has_buzzer", "Device Has Buzzer", None, "mdi:bell", "format_bool", EntityCategory.DIAGNOSTIC),
+    ("device.hasSpeaker", "device_has_speaker", "Device Has Speaker", None, "mdi:volume-high", "format_bool", EntityCategory.DIAGNOSTIC),
+
     # Battery - Main sensor
     ("battery.current", "battery", "Battery", PERCENTAGE, "mdi:battery", None, None),
-    
+
     # Blood oxygen - Main sensors
     ("blood_oxygen.current.value", "blood_oxygen", "Blood Oxygen", PERCENTAGE, "mdi:water-percent", None, None),
     ("blood_oxygen.current.time", "blood_oxygen_time", "Blood Oxygen Time", None, "mdi:clock-time-four-outline", None, EntityCategory.DIAGNOSTIC),
-    ("blood_oxygen.current.retCode", "blood_oxygen_retcode", "Blood Oxygen Status", None, "mdi:alert-circle-outline", None, EntityCategory.DIAGNOSTIC),
-    
+    ("blood_oxygen.current.retCode", "blood_oxygen_retcode", "Blood Oxygen Retcode", None, "mdi:alert-circle-outline", None, EntityCategory.DIAGNOSTIC),
+
     # Body temperature - Main sensors
     ("body_temperature.current.value", "body_temperature", "Body Temperature", "°C", "mdi:thermometer", "format_body_temp", None),
     ("body_temperature.current.time", "body_temperature_time", "Body Temperature Time", None, "mdi:clock-time-four-outline", None, EntityCategory.DIAGNOSTIC),
-    
+
     # Calories - Main sensors
     ("calorie.current", "calories", "Calories", "kcal", "mdi:fire", None, None),
     ("calorie.target", "calories_target", "Calories Target", "kcal", "mdi:bullseye", None, None),
-    
+
     # Distance - Main sensor
     ("distance.current", "distance", "Distance", "m", "mdi:map-marker-distance", None, None),
-    
+
     # Fat burning - Main sensors
     ("fat_burning.current", "fat_burning", "Fat Burning", "min", "mdi:run-fast", None, None),
     ("fat_burning.target", "fat_burning_target", "Fat Burning Target", "min", "mdi:target", None, None),
-    
+
     # Heart rate - Main sensors
     ("heart_rate.last", "heart_rate_last", "Heart Rate Last", "bpm", "mdi:heart-pulse", None, None),
-    ("heart_rate.resting", "heart_rate_resting", "Resting Heart Rate", "bpm", "mdi:heart", None, None),
-    ("heart_rate.summary.maximum.time", "hr_max_time", "Max HR Time", None, "mdi:clock", None, EntityCategory.DIAGNOSTIC),
-    ("heart_rate.summary.maximum.time_zone", "hr_max_timezone", "Max HR Timezone", None, "mdi:clock-outline", None, EntityCategory.DIAGNOSTIC),
-    ("heart_rate.summary.maximum.hr_value", "hr_max", "Max Heart Rate", "bpm", "mdi:heart-flash", None, None),
-    
+    ("heart_rate.resting", "heart_rate_resting", "Heart Rate Resting", "bpm", "mdi:heart", None, None),
+    ("heart_rate.summary.maximum.time", "heart_rate_max_time", "Heart Rate Max Time", None, "mdi:clock", None, EntityCategory.DIAGNOSTIC),
+    ("heart_rate.summary.maximum.time_zone", "heart_rate_max_timezone", "Heart Rate Max Timezone", None, "mdi:clock-outline", None, EntityCategory.DIAGNOSTIC),
+    ("heart_rate.summary.maximum.hr_value", "heart_rate_max", "Heart Rate Max", "bpm", "mdi:heart-flash", None, None),
+
     # PAI - Main sensors
-    ("pai.day", "pai_day", "PAI Day", None, "mdi:chart-bubble", None, None),
-    ("pai.week", "pai_week", "PAI Week", None, "mdi:chart-bubble", None, None),
+    ("pai.day", "pai_day", "PAI Day", "points", "mdi:chart-bubble", None, None),
+    ("pai.week", "pai_week", "PAI Week", "points", "mdi:chart-bubble", None, None),
     
     # Sleep - Main sensors
-    ("sleep.info.score", "sleep_score", "Sleep Score", None, "mdi:sleep", None, None),
+    ("sleep.info.score", "sleep_score", "Sleep Score", "points", "mdi:sleep", None, None),
     ("sleep.info.startTime", "sleep_start", "Sleep Start", "min", "mdi:clock-start", None, None),
     ("sleep.info.endTime", "sleep_end", "Sleep End", "min", "mdi:clock-end", None, None),
-    ("sleep.info.deepTime", "sleep_deep", "Deep Sleep Duration", "min", "mdi:weather-night", None, None),
-    ("sleep.info.totalTime", "sleep_total", "Total Sleep Duration", "min", "mdi:clock-outline", None, None),
-    ("sleep.stg_list.WAKE_STAGE", "sleep_stage_wake", "Wake Stage Duration", "min", "mdi:weather-sunny", None, None),
-    ("sleep.stg_list.REM_STAGE", "sleep_stage_rem", "REM Stage Duration", "min", "mdi:brain", None, None),
-    ("sleep.stg_list.LIGHT_STAGE", "sleep_stage_light", "Light Stage Duration", "min", "mdi:weather-sunset", None, None),
-    ("sleep.stg_list.DEEP_STAGE", "sleep_stage_deep", "Deep Stage Duration", "min", "mdi:weather-night", None, None),
+    ("sleep.info.deepTime", "sleep_deep", "Sleep Deep", "min", "mdi:weather-night", None, None),
+    ("sleep.info.totalTime", "sleep_total", "Sleep Total", "min", "mdi:clock-outline", None, None),
+    ("sleep.stg_list.WAKE_STAGE", "sleep_stage_wake", "Sleep Stage Wake", "min", "mdi:weather-sunny", None, None),
+    ("sleep.stg_list.REM_STAGE", "sleep_stage_rem", "Sleep Stage Rem", "min", "mdi:brain", None, None),
+    ("sleep.stg_list.LIGHT_STAGE", "sleep_stage_light", "Sleep Stage Light", "min", "mdi:weather-sunset", None, None),
+    ("sleep.stg_list.DEEP_STAGE", "sleep_stage_deep", "Sleep Stage Deep", "min", "mdi:weather-night", None, None),
     ("sleep.status", "sleeping_status", "Sleeping Status", None, "mdi:sleep", "format_sleep_status", None),
-    
+
     # Stands - Main sensors
     ("stands.current", "stands", "Stands", "times", "mdi:human-handsup", None, None),
     ("stands.target", "stands_target", "Stands Target", "times", "mdi:target", None, None),
-    
+
     # Steps - Main sensors
     ("steps.current", "steps", "Steps", "steps", "mdi:walk", None, None),
     ("steps.target", "steps_target", "Steps Target", "steps", "mdi:target", None, None),
-    
+
     # Stress - Main sensors
-    ("stress.current.value", "stress_value", "Stress Value", None, "mdi:emoticon-sad-outline", None, None),
+    ("stress.current.value", "stress_value", "Stress Value", "points", "mdi:emoticon-sad-outline", None, None),
     ("stress.current.time", "stress_time", "Stress Time", None, "mdi:clock-time-four-outline", None, EntityCategory.DIAGNOSTIC),
-    
+
     # Screen - Diagnostic category
     ("screen.status", "screen_status", "Screen Status", None, "mdi:monitor", None, EntityCategory.DIAGNOSTIC),
-    ("screen.aod_mode", "screen_aod_mode", "AOD Mode", None, "mdi:monitor-eye", "format_bool", EntityCategory.DIAGNOSTIC),
+    ("screen.aod_mode", "screen_aod_mode", "Screen Aod Mode", None, "mdi:monitor-eye", "format_bool", EntityCategory.DIAGNOSTIC),
     ("screen.light", "screen_light", "Screen Light", PERCENTAGE, "mdi:brightness-6", None, EntityCategory.DIAGNOSTIC),
-    
+
     # Wearing status - Main sensor
     ("is_wearing", "is_wearing", "Wearing Status", None, "mdi:watch", "format_wearing_status", None),
     
     # Workout - Main sensors
-    ("workout.status.vo2Max", "workout_vo2max", "VO2 Max", None, "mdi:chart-line", None, None),
-    ("workout.status.trainingLoad", "workout_training_load", "Training Load", None, "mdi:dumbbell", None, None),
-    ("workout.status.fullRecoveryTime", "workout_recovery_time", "Full Recovery Time", None, "mdi:clock-time-four-outline", None, None),
+    ("workout.status.vo2Max", "workout_vo2max", "Workout Vo2 Max", "ml/kg/min", "mdi:chart-line", None, None),
+    ("workout.status.trainingLoad", "workout_training_load", "Workout Training Load", "points", "mdi:dumbbell", None, None),
+    ("workout.status.fullRecoveryTime", "workout_recovery_time", "Workout Full Recovery Time", "h", "mdi:clock-time-four-outline", None, None),
 ]
 
 
@@ -218,6 +216,25 @@ def _format_bool(value: Any) -> Any:
     return value
 
 
+def _format_float(value: Any) -> Any:
+    """Format float value to 2 decimal places."""
+    if isinstance(value, float):
+        return round(value, 2)
+    return value
+
+
+def _format_birth_date(value: Any) -> Any:
+    """Format birth date from dict to DD/MM/YYYY format."""
+    if isinstance(value, dict) and "year" in value and "month" in value and "day" in value:
+        year = value.get("year")
+        month = value.get("month")
+        day = value.get("day")
+        if year and month and day:
+            # Format as DD/MM/YYYY with zero-padding
+            return f"{day:02d}/{month:02d}/{year}"
+    return value
+
+
 def _format_body_temp(value: Any) -> Any:
     """Format body temperature value (convert from device units to Celsius)."""
     if isinstance(value, (int, float)):
@@ -228,7 +245,8 @@ def _format_body_temp(value: Any) -> Any:
         # If value > 100, assume it's in hundredths (2950 = 29.50°C)
         if value > 100:
             return round(value / 100, 2)
-        return value
+        # Format as float with 2 decimal places
+        return round(float(value), 2)
     return value
 
 
@@ -293,10 +311,17 @@ class Zepp2HassSensor(SensorEntity):
                 "format_sleep_status": _format_sleep_status,
                 "format_bool": _format_bool,
                 "format_body_temp": _format_body_temp,
+                "format_float": _format_float,
+                "format_birth_date": _format_birth_date,
             }
             formatter_func = formatter_map.get(self._formatter)
             if formatter_func:
-                return formatter_func(value)
+                value = formatter_func(value)
+        
+        # Automatically format float values to 2 decimal places (unless already formatted by specific formatter)
+        # Skip if value was formatted by format_body_temp (already handles rounding)
+        if isinstance(value, float) and self._formatter != "format_body_temp":
+            value = round(value, 2)
         
         return value
 
