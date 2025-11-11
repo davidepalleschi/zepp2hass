@@ -6,7 +6,7 @@
   To add a Zepp logo/image, uncomment the line below and replace with your image URL
   You can host the image in your repository (e.g., /images/zepp-logo.png) or use an external URL
 -->
-<img src="./images/zepp-logo.png" alt="Zepp Logo" width="300" style="margin-bottom: 20px;"/>
+<img src="./images/zepp2hass.png" alt="Zepp Logo" width="300" style="margin-bottom: 20px;"/>
 
 ![Zepp Logo](https://img.shields.io/badge/Zepp-Smartwatch-blue?style=for-the-badge&logo=watch)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Integration-orange?style=for-the-badge&logo=home-assistant)
