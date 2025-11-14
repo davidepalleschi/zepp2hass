@@ -294,7 +294,6 @@ SENSOR_DEFINITIONS = [
     ("workout.status.vo2Max", "workout_vo2max", "Workout Vo2 Max", "ml/kg/min", "mdi:chart-line", None, None, None),
     ("workout.status.trainingLoad", "workout_training_load", "Workout Training Load", "points", "mdi:dumbbell", None, None, None),
     ("workout.status.fullRecoveryTime", "workout_recovery_time", "Workout Full Recovery Time", UnitOfTime.HOURS, "mdi:clock-time-four-outline", None, None, SensorDeviceClass.DURATION),
-    ("workout.subType", "workout_sport_type", "Workout Sport Type", None, "mdi:run-fast", "format_sport_type", None, None),
     ("sport.subType", "sport_type", "Sport Type", None, "mdi:run-fast", "format_sport_type", None, None),
 ]
 
@@ -330,6 +329,9 @@ async def async_setup_entry(
     # Add consolidated Device and User entities
     sensors.append(DeviceInfoSensor(entry_id, device_name))
     sensors.append(UserInfoSensor(entry_id, device_name))
+    
+    # Add workout history sensor
+    sensors.append(WorkoutHistorySensor(entry_id, device_name))
     
     async_add_entities(sensors)
 
@@ -854,6 +856,139 @@ class UserInfoSensor(SensorEntity):
                 
         except Exception as exc:
             _LOGGER.error("Error updating user info sensor: %s", exc, exc_info=True)
+
+    async def async_update(self) -> None:
+        """Update the sensor.
+        
+        Passive sensors, updated only via webhook.
+        """
+        pass
+
+
+class WorkoutHistorySensor(SensorEntity):
+    """Workout History sensor with recent workouts as attributes."""
+
+    def __init__(self, entry_id: str, device_name: str) -> None:
+        """Initialize the workout history sensor."""
+        self._entry_id = entry_id
+        self._device_name = device_name
+        
+        # Set entity attributes
+        self._attr_name = f"{device_name} Workout History"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_workout_history"
+        self._attr_icon = "mdi:history"
+        self._attr_native_value = None
+        self._attr_extra_state_attributes = {}
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=self._device_name,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._attr_native_value is not None
+
+    async def async_added_to_hass(self) -> None:
+        """Register update dispatcher."""
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass,
+                SIGNAL_UPDATE.format(self._entry_id),
+                self.async_update_from_payload,
+            )
+        )
+
+    def _format_timestamp(self, timestamp_ms: int) -> str:
+        """Format timestamp from milliseconds to ISO format."""
+        from datetime import datetime
+        try:
+            dt = datetime.fromtimestamp(timestamp_ms)
+            return dt.isoformat()
+        except Exception:
+            return str(timestamp_ms)
+
+    def _format_duration(self, duration_ms: int) -> dict[str, int]:
+        """Format duration from milliseconds to human readable format."""
+        total_seconds = duration_ms // 1000
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+        
+        return {
+            "hours": hours,
+            "minutes": minutes,
+            "seconds": seconds,
+            "total_seconds": total_seconds,
+            "total_minutes": total_seconds // 60,
+        }
+
+    async def async_update_from_payload(self, payload: dict[str, Any]) -> None:
+        """Update sensor from webhook payload."""
+        try:
+            workout_data = payload.get("workout", {})
+            history = workout_data.get("history", [])
+            
+            if not history:
+                # No history available
+                return
+            
+            # Sort history by startTime (most recent first)
+            sorted_history = sorted(history, key=lambda x: x.get("startTime", 0), reverse=True)
+            
+            # Get last workout
+            last_workout = sorted_history[0] if sorted_history else None
+            
+            if last_workout:
+                # Set state to last workout sport type
+                sport_type = last_workout.get("sportType")
+                state = _format_sport_type(sport_type) if sport_type else "No Recent Workout"
+                
+                # Build attributes
+                attributes = {}
+                
+                # Last workout details
+                attributes["last_workout_sport_type"] = _format_sport_type(sport_type) if sport_type else None
+                attributes["last_workout_sport_type_id"] = sport_type
+                attributes["last_workout_start_time"] = self._format_timestamp(last_workout.get("startTime", 0))
+                
+                duration_data = self._format_duration(last_workout.get("duration", 0))
+                attributes["last_workout_duration"] = duration_data
+                attributes["last_workout_duration_minutes"] = duration_data["total_minutes"]
+                
+                # Total workouts count
+                attributes["total_workouts"] = len(history)
+                
+                # Recent workouts (last 10)
+                recent_workouts = []
+                for workout in sorted_history[:10]:
+                    sport_type = workout.get("sportType")
+                    workout_info = {
+                        "sport_type": _format_sport_type(sport_type) if sport_type else "Unknown",
+                        "sport_type_id": sport_type,
+                        "start_time": self._format_timestamp(workout.get("startTime", 0)),
+                        "duration": self._format_duration(workout.get("duration", 0)),
+                        "duration_minutes": workout.get("duration", 0) // 60000,
+                    }
+                    recent_workouts.append(workout_info)
+                
+                attributes["recent_workouts"] = recent_workouts
+                
+                # Update state and attributes
+                if state != self._attr_native_value or attributes != self._attr_extra_state_attributes:
+                    _LOGGER.debug("Updating Workout History -> %s with %d workouts", state, len(history))
+                    self._attr_native_value = state
+                    self._attr_extra_state_attributes = attributes
+                    self.async_write_ha_state()
+                    
+        except Exception as exc:
+            _LOGGER.error("Error updating workout history sensor: %s", exc, exc_info=True)
 
     async def async_update(self) -> None:
         """Update the sensor.
