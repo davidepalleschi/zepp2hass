@@ -243,9 +243,9 @@ SENSOR_DEFINITIONS = [
     ("battery.current", "battery", "Battery", PERCENTAGE, "mdi:battery", None, None, SensorDeviceClass.BATTERY),
 
     # Blood oxygen - Main sensors
-    ("blood_oxygen.current.value", "blood_oxygen", "Blood Oxygen", PERCENTAGE, "mdi:water-percent", None, None, None),
-    ("blood_oxygen.current.time", "blood_oxygen_time", "Blood Oxygen Time", None, "mdi:clock-time-four-outline", None, EntityCategory.DIAGNOSTIC, SensorDeviceClass.TIMESTAMP),
-    ("blood_oxygen.current.retCode", "blood_oxygen_retcode", "Blood Oxygen Retcode", None, "mdi:alert-circle-outline", None, EntityCategory.DIAGNOSTIC, None),
+    #("blood_oxygen.current.value", "blood_oxygen", "Blood Oxygen", PERCENTAGE, "mdi:water-percent", None, None, None),
+    #("blood_oxygen.current.time", "blood_oxygen_time", "Blood Oxygen Time", None, "mdi:clock-time-four-outline", None, EntityCategory.DIAGNOSTIC, SensorDeviceClass.TIMESTAMP),
+    #("blood_oxygen.current.retCode", "blood_oxygen_retcode", "Blood Oxygen Retcode", None, "mdi:alert-circle-outline", None, EntityCategory.DIAGNOSTIC, None),
 
     # Body temperature - Main sensors
     ("body_temperature.current.value", "body_temperature", "Body Temperature", UnitOfTemperature.CELSIUS, "mdi:thermometer", "format_body_temp", None, SensorDeviceClass.TEMPERATURE),
@@ -333,6 +333,10 @@ async def async_setup_entry(
     # Add workout history sensor
     sensors.append(WorkoutHistorySensor(entry_id, device_name))
     
+    # Add blood oxygen sensors (using few_hours data)
+    sensors.append(BloodOxygenSensor(entry_id, device_name))
+    sensors.append(BloodOxygenTimeSensor(entry_id, device_name))
+    
     async_add_entities(sensors)
 
 
@@ -375,6 +379,11 @@ def _format_sleep_status(value: Any) -> Any:
 
 def _format_sport_type(value: Any) -> Any:
     """Format sport type value."""
+    if isinstance(value, int):
+        # Remove first digit if more than one digit
+        value_str = str(value)
+        if len(value_str) > 1:
+            value = int(value_str[1:])
     if isinstance(value, int):
         return SPORT_TYPE_MAP.get(value, f"Unknown ({value})")
     return value
@@ -989,6 +998,147 @@ class WorkoutHistorySensor(SensorEntity):
                     
         except Exception as exc:
             _LOGGER.error("Error updating workout history sensor: %s", exc, exc_info=True)
+
+    async def async_update(self) -> None:
+        """Update the sensor.
+        
+        Passive sensors, updated only via webhook.
+        """
+        pass
+
+
+class BloodOxygenSensor(SensorEntity):
+    """Blood Oxygen sensor using last element from few_hours array."""
+
+    def __init__(self, entry_id: str, device_name: str) -> None:
+        """Initialize the blood oxygen sensor."""
+        self._entry_id = entry_id
+        self._device_name = device_name
+        
+        # Set entity attributes
+        self._attr_name = f"{device_name} Blood Oxygen"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_blood_oxygen"
+        self._attr_icon = "mdi:water-percent"
+        self._attr_native_unit_of_measurement = PERCENTAGE
+        self._attr_native_value = None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=self._device_name,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._attr_native_value is not None
+
+    async def async_added_to_hass(self) -> None:
+        """Register update dispatcher."""
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass,
+                SIGNAL_UPDATE.format(self._entry_id),
+                self.async_update_from_payload,
+            )
+        )
+
+    async def async_update_from_payload(self, payload: dict[str, Any]) -> None:
+        """Update sensor from webhook payload."""
+        try:
+            blood_oxygen_data = payload.get("blood_oxygen", {})
+            few_hours = blood_oxygen_data.get("few_hours", [])
+            
+            if few_hours and isinstance(few_hours, list) and len(few_hours) > 0:
+                # Get last element from few_hours
+                last_reading = few_hours[-1]
+                spo2_value = last_reading.get("spo2")
+                
+                if spo2_value is not None and spo2_value != self._attr_native_value:
+                    _LOGGER.debug("Updating Blood Oxygen -> %s", spo2_value)
+                    self._attr_native_value = spo2_value
+                    self.async_write_ha_state()
+                    
+        except Exception as exc:
+            _LOGGER.error("Error updating blood oxygen sensor: %s", exc, exc_info=True)
+
+    async def async_update(self) -> None:
+        """Update the sensor.
+        
+        Passive sensors, updated only via webhook.
+        """
+        pass
+
+
+class BloodOxygenTimeSensor(SensorEntity):
+    """Blood Oxygen Time sensor using last element from few_hours array."""
+
+    def __init__(self, entry_id: str, device_name: str) -> None:
+        """Initialize the blood oxygen time sensor."""
+        self._entry_id = entry_id
+        self._device_name = device_name
+        
+        # Set entity attributes
+        self._attr_name = f"{device_name} Blood Oxygen Time"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_blood_oxygen_time"
+        self._attr_icon = "mdi:clock-time-four-outline"
+        self._attr_native_value = None
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device information."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=self._device_name,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._attr_native_value is not None
+
+    async def async_added_to_hass(self) -> None:
+        """Register update dispatcher."""
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass,
+                SIGNAL_UPDATE.format(self._entry_id),
+                self.async_update_from_payload,
+            )
+        )
+
+    async def async_update_from_payload(self, payload: dict[str, Any]) -> None:
+        """Update sensor from webhook payload."""
+        try:
+            from datetime import datetime
+            
+            blood_oxygen_data = payload.get("blood_oxygen", {})
+            few_hours = blood_oxygen_data.get("few_hours", [])
+            
+            if few_hours and isinstance(few_hours, list) and len(few_hours) > 0:
+                # Get last element from few_hours
+                last_reading = few_hours[-1]
+                time_value = last_reading.get("time")
+                
+                if time_value is not None:
+                    # Convert timestamp to datetime object
+                    dt = datetime.fromtimestamp(time_value)
+                    
+                    if dt != self._attr_native_value:
+                        _LOGGER.debug("Updating Blood Oxygen Time -> %s", dt)
+                        self._attr_native_value = dt
+                        self.async_write_ha_state()
+                    
+        except Exception as exc:
+            _LOGGER.error("Error updating blood oxygen time sensor: %s", exc, exc_info=True)
 
     async def async_update(self) -> None:
         """Update the sensor.
