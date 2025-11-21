@@ -1,13 +1,10 @@
 {
-  "en": {
-    "title": "Zepp2Hass",
-    "config": {
-      "step": {
-        "user": {
-          "title": "Add Zepp2Hass device",
-          "data": {
-            "name": "Device name"
-          }
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Zepp2Hass device",
+        "data": {
+          "name": "Device name"
         }
       }
     }

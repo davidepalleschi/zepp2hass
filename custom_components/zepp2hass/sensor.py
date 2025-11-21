@@ -268,8 +268,8 @@ SENSOR_DEFINITIONS = [
     
     # Sleep - Main sensors
     ("sleep.info.score", "sleep_score", "Sleep Score", "points", "mdi:sleep", None, None, None),
-    ("sleep.info.startTime", "sleep_start", "Sleep Start", UnitOfTime.MINUTES, "mdi:clock-start", None, None, SensorDeviceClass.DURATION),
-    ("sleep.info.endTime", "sleep_end", "Sleep End", UnitOfTime.MINUTES, "mdi:clock-end", None, None, SensorDeviceClass.DURATION),
+    ("sleep.info.startTime", "sleep_start", "Sleep Start", None, "mdi:clock-start", "format_sleep_time", None, SensorDeviceClass.TIMESTAMP),
+    ("sleep.info.endTime", "sleep_end", "Sleep End", None, "mdi:clock-end", "format_sleep_time", None, SensorDeviceClass.TIMESTAMP),
     ("sleep.info.deepTime", "sleep_deep", "Sleep Deep", UnitOfTime.MINUTES, "mdi:weather-night", None, None, SensorDeviceClass.DURATION),
     ("sleep.info.totalTime", "sleep_total", "Sleep Total", UnitOfTime.MINUTES, "mdi:clock-outline", None, None, SensorDeviceClass.DURATION),
     # ("sleep.stg_list.WAKE_STAGE", "sleep_stage_wake", "Sleep Stage Wake", UnitOfTime.MINUTES, "mdi:weather-sunny", None, None, SensorDeviceClass.DURATION),
@@ -431,6 +431,29 @@ def _format_body_temp(value: Any) -> Any:
     return value
 
 
+def _format_sleep_time(value: Any) -> Any:
+    """Format sleep start/end time from minutes since midnight to ISO timestamp.
+    
+    Sleep times are stored as minutes from midnight of the previous day.
+    For example: 1394 minutes = 23:14 (previous day), 1884 minutes = 07:24 (next morning).
+    """
+    from datetime import datetime, timedelta
+    
+    if isinstance(value, (int, float)):
+        # Get today's date at midnight
+        today_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Calculate the datetime starting from yesterday's midnight
+        # Sleep times are counted from the previous day's midnight
+        yesterday_midnight = today_midnight - timedelta(days=1)
+        sleep_datetime = yesterday_midnight + timedelta(minutes=value)
+        
+        # Return as ISO format string for timestamp sensor
+        return sleep_datetime.isoformat()
+    
+    return value
+
+
 class Zepp2HassSensor(SensorEntity):
     """Representation of a Zepp2Hass sensor."""
 
@@ -497,6 +520,7 @@ class Zepp2HassSensor(SensorEntity):
                 "format_body_temp": _format_body_temp,
                 "format_float": _format_float,
                 "format_birth_date": _format_birth_date,
+                "format_sleep_time": _format_sleep_time,
             }
             formatter_func = formatter_map.get(self._formatter)
             if formatter_func:
@@ -600,6 +624,7 @@ class Zepp2HassSensorWithTarget(SensorEntity):
                 "format_body_temp": _format_body_temp,
                 "format_float": _format_float,
                 "format_birth_date": _format_birth_date,
+                "format_sleep_time": _format_sleep_time,
             }
             formatter_func = formatter_map.get(self._formatter)
             if formatter_func:
