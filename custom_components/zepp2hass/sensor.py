@@ -47,7 +47,7 @@ SLEEP_STATUS_MAP = {
 # Sport type mapping (subType values)
 SPORT_TYPE_MAP = {
     1: "Outdoor Running",
-    2: "Treadmill (original indoor running)",
+    2: "Treadmill",
     3: "Walking",
     4: "Outdoor Cycling",
     5: "Free Training",
@@ -215,9 +215,9 @@ SPORT_TYPE_MAP = {
     188: "Floor ball",
     189: "Electronic Sports",
     190: "ATV",
-    191: "Football (without GPS)",
+    191: "Football",
     192: "Playground Running",
-    193: "Fishing (Number of Fishes)",
+    193: "Fishing",
     194: "Indoor Rock Climbing",
     195: "Mountaineering and Skiing",
     196: "Outdoor Freediving",
@@ -225,9 +225,10 @@ SPORT_TYPE_MAP = {
     198: "Fishing and Hunting",
     199: "Simple Tennis",
     200: "Wakewave Surfing",
-    201: "Surfing (identify number of trips)",
-    202: "Kitesurfing (Identification Gliding)",
+    201: "Surfing",
+    202: "Kitesurfing",
     203: "Ultra Marathon",
+    221: "Recreatinal diving"
 }
 
 # Define all sensors you want created per device.
