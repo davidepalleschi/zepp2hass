@@ -9,8 +9,8 @@ from .definitions import SENSOR_DEFINITIONS, SENSORS_WITH_TARGET
 from .formatters import (
     get_nested_value,
     format_gender,
-    format_wearing_status,
-    format_sleep_status,
+    #format_wearing_status,
+    #format_sleep_status,
     format_sport_type,
     format_bool,
     format_float,
@@ -21,9 +21,9 @@ from .formatters import (
     FORMATTER_MAP,
 )
 from .mappings import (
-    WEARING_STATUS_MAP,
+    #WEARING_STATUS_MAP,
     GENDER_MAP,
-    SLEEP_STATUS_MAP,
+    #SLEEP_STATUS_MAP,
     SPORT_TYPE_MAP,
 )
 
@@ -44,8 +44,8 @@ __all__ = [
     # Formatters
     "get_nested_value",
     "format_gender",
-    "format_wearing_status",
-    "format_sleep_status",
+    #"format_wearing_status",
+    #"format_sleep_status",
     "format_sport_type",
     "format_bool",
     "format_float",
@@ -55,9 +55,9 @@ __all__ = [
     "apply_formatter",
     "FORMATTER_MAP",
     # Mappings
-    "WEARING_STATUS_MAP",
+    #"WEARING_STATUS_MAP",
     "GENDER_MAP",
-    "SLEEP_STATUS_MAP",
+    #"SLEEP_STATUS_MAP",
     "SPORT_TYPE_MAP",
 ]
 
