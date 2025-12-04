@@ -73,8 +73,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             device_name, url, full_webhook_url
         )
 
-        # Forward setup to sensor platform
-        await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+        # Forward setup to sensor and binary_sensor platforms
+        await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "binary_sensor"])
 
         return True
     except Exception as exc:
@@ -94,7 +94,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             data.pop(entry_id)
         
         # Unload platforms
-        unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, ["sensor"])
+        unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, ["sensor", "binary_sensor"])
         
         if unload_ok:
             _LOGGER.info("Successfully unloaded Zepp2Hass entry %s", entry_id)
