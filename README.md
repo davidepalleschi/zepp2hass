@@ -2,11 +2,7 @@
 
 <div align="center">
 
-<!-- 
-  To add a Zepp logo/image, uncomment the line below and replace with your image URL
-  You can host the image in your repository (e.g., /images/zepp-logo.png) or use an external URL
--->
-<img src="./images/zepp2hass.svg" alt="Zepp Logo" width="300" style="margin-bottom: 20px;"/>
+<img src="./images/zepp2hass.svg" alt="Zepp2Hass Logo" width="300" style="margin-bottom: 20px;"/>
 
 ![Zepp Logo](https://img.shields.io/badge/Zepp-Smartwatch-blue?style=for-the-badge&logo=watch)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Integration-orange?style=for-the-badge&logo=home-assistant)
@@ -22,18 +18,31 @@
 
 ---
 
-## 📱 Features
+## ✨ Features
 
-Zepp2Hass brings comprehensive health and fitness tracking from your Zepp smartwatch directly into Home Assistant:
+### 📡 Real-time Data via Webhook
 
-- ❤️ **Heart Rate Monitoring** - Real-time and resting heart rate tracking
-- 🔋 **Battery Status** - Monitor your device battery level
-- 🚶 **Activity Tracking** - Steps, distance, calories, and more
-- 😴 **Sleep Analysis** - Deep sleep, REM, light sleep stages, and sleep score
-- 🏋️ **Fitness Metrics** - Fat burning, PAI (Personal Activity Intelligence), stands
-- 🩺 **Health Monitoring** - Blood oxygen levels, stress values
-- 👕 **Wearing Status** - Know when you're wearing your device
-- 📊 **50+ Sensors** - Comprehensive data coverage for all your metrics
+Zepp2Hass receives data from your Zepp smartwatch via a local webhook endpoint. When you configure the integration, it creates a unique webhook URL that accepts JSON payloads with all your health metrics.
+
+### 🌐 Built-in Web Dashboard
+
+Each webhook comes with a **beautiful web dashboard** accessible via browser! Simply visit your webhook URL in a browser to:
+
+- **View the webhook URL** with one-click copy
+- **See the latest JSON payload** with syntax highlighting
+- **Expand/collapse** nested data
+- **Check error logs** at `/log` endpoint
+
+### 📊 Comprehensive Sensor Suite
+
+The integration creates multiple sensor types:
+
+| Category | Description |
+|----------|-------------|
+| **Regular Sensors** | Battery, Heart Rate, Sleep, Stress, Temperature, Distance |
+| **Goal Sensors** | Steps, Calories, Fat Burning, Stands (with target as attribute) |
+| **Binary Sensors** | Is Wearing, Is Moving, Is Sleeping |
+| **Special Sensors** | PAI (week + day), Blood Oxygen, Workouts, Device/User Info |
 
 ---
 
@@ -67,94 +76,138 @@ Zepp2Hass brings comprehensive health and fitness tracking from your Zepp smartw
 
 ## ⚙️ Configuration
 
-### Step 1: Add Integration
+### Step 1: Add the Integration
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **Add Integration**
 3. Search for **Zepp2Hass**
-4. Enter a **device name** (e.g., "My Zepp Watch" or "Zepp Band 7")
+4. Enter a **device name** (e.g., "My Zepp Watch", "Amazfit Band 7")
 5. Click **Submit**
 
 ### Step 2: Get Your Webhook URL
 
-After adding the integration, check your Home Assistant logs. You'll see a message like:
+After adding the integration, you'll find the webhook URL in:
 
-```
-Registered Zepp2Hass webhook for My Zepp Watch at /api/zepp2hass/my_zepp_watch
-```
+- **Home Assistant Logs** (Settings → System → Logs)
+- **The Web Dashboard** (visit the webhook URL in your browser)
 
-Your webhook URL will be:
+The URL format is:
 ```
 http://YOUR_HOME_ASSISTANT_IP:8123/api/zepp2hass/YOUR_DEVICE_NAME
 ```
 
-Or if you have external access:
+Example for a device named "My Zepp Watch":
 ```
-https://YOUR_HOME_ASSISTANT_URL/api/zepp2hass/YOUR_DEVICE_NAME
+http://192.168.1.100:8123/api/zepp2hass/my_zepp_watch
 ```
 
-**Note:** The device name is automatically converted to a URL-friendly format (lowercase, spaces replaced with underscores).
+> **Note:** The device name is automatically converted to a URL-friendly format (lowercase, spaces replaced with underscores).
 
-### Step 3: Configure Your Zepp App
+### Step 3: Configure Data Source
 
-You'll need to configure your Zepp app or automation to send data to this webhook URL. The integration expects JSON data via POST requests.
+Send POST requests with JSON payloads to your webhook URL. The integration expects the following structure:
 
-**Example webhook payload:**
 ```json
 {
-  "Id": "12345",
-  "RecordTime": "2024-01-15T10:30:00Z",
-  "Steps": 8500,
-  "Calorie": 450,
-  "HeartRateLast": 72,
-  "HeartRateResting": 65,
-  "Battery": 85,
-  "IsWearing": 1,
-  "BloodOxygenValue": 98,
-  "SleepInfoScore": 85,
-  "StressValue": 25
+  "record_time": "2024-01-15T10:30:00",
+  "battery": { "current": 85 },
+  "heart_rate": {
+    "last": 72,
+    "resting": 58,
+    "summary": { "maximum": { "hr_value": 145 } }
+  },
+  "steps": { "current": 8500, "target": 10000 },
+  "calorie": { "current": 450, "target": 600 },
+  "distance": { "current": 6200 },
+  "sleep": {
+    "status": 0,
+    "info": {
+      "score": 85,
+      "totalTime": 420,
+      "deepTime": 90,
+      "startTime": "2024-01-14T23:30:00",
+      "endTime": "2024-01-15T06:30:00"
+    }
+  },
+  "blood_oxygen": {
+    "few_hours": [
+      { "value": 98, "time": "2024-01-15T10:00:00" }
+    ]
+  },
+  "stress": { "current": { "value": 25 } },
+  "is_wearing": 1,
+  "pai": { "day": 45, "week": 280 }
 }
 ```
 
 ---
 
-## 📊 Available Sensors
+## 📊 Available Entities
 
-The integration creates sensors for all available metrics. Here are some key ones:
+### Sensors
 
-### Activity Sensors
-- `sensor.YOUR_DEVICE_steps` - Step count
-- `sensor.YOUR_DEVICE_calories` - Calories burned
-- `sensor.YOUR_DEVICE_distance` - Distance traveled
-- `sensor.YOUR_DEVICE_fat_burning` - Fat burning duration
-- `sensor.YOUR_DEVICE_pai_day` - Daily PAI score
-- `sensor.YOUR_DEVICE_pai_week` - Weekly PAI score
+| Entity ID | Description | Unit | Device Class |
+|-----------|-------------|------|--------------|
+| `sensor.*_record_time` | Last data update timestamp | - | - |
+| `sensor.*_battery` | Device battery level | % | Battery |
+| `sensor.*_heart_rate_last` | Last heart rate reading | bpm | - |
+| `sensor.*_heart_rate_resting` | Resting heart rate | bpm | - |
+| `sensor.*_heart_rate_max` | Maximum heart rate | bpm | - |
+| `sensor.*_steps` | Step count (target as attribute) | steps | - |
+| `sensor.*_calories` | Calories burned (target as attribute) | kcal | Energy |
+| `sensor.*_distance` | Distance traveled | m | Distance |
+| `sensor.*_fat_burning` | Fat burning duration (target as attribute) | min | Duration |
+| `sensor.*_stands` | Stand count (target as attribute) | times | - |
+| `sensor.*_sleep_score` | Sleep quality score | points | - |
+| `sensor.*_sleep_total` | Total sleep duration | min | Duration |
+| `sensor.*_sleep_deep` | Deep sleep duration | min | Duration |
+| `sensor.*_sleep_start` | Sleep start time | - | Timestamp |
+| `sensor.*_sleep_end` | Sleep end time | - | Timestamp |
+| `sensor.*_stress_value` | Stress level | points | - |
+| `sensor.*_body_temperature` | Body temperature | °C | Temperature |
+| `sensor.*_blood_oxygen` | Blood oxygen level (with history) | % | - |
+| `sensor.*_pai` | PAI week score (day as attribute) | points | - |
+| `sensor.*_device_info` | Device information (model, version, etc.) | - | - |
+| `sensor.*_user_info` | User information (nickname, gender, etc.) | - | - |
+| `sensor.*_workout_status` | Current workout status | - | - |
+| `sensor.*_workout_last` | Last workout details | - | - |
+| `sensor.*_workout_history` | Workout history | - | - |
 
-### Heart Rate Sensors
-- `sensor.YOUR_DEVICE_heart_rate_last` - Last heart rate reading
-- `sensor.YOUR_DEVICE_heart_rate_resting` - Resting heart rate
-- `sensor.YOUR_DEVICE_hr_max` - Maximum heart rate
+### Binary Sensors
 
-### Sleep Sensors
-- `sensor.YOUR_DEVICE_sleep_score` - Sleep quality score
-- `sensor.YOUR_DEVICE_sleep_total` - Total sleep duration
-- `sensor.YOUR_DEVICE_sleep_deep` - Deep sleep duration
-- `sensor.YOUR_DEVICE_sleep_stage_rem` - REM sleep duration
-- `sensor.YOUR_DEVICE_sleep_stage_light` - Light sleep duration
+| Entity ID | Description | On State |
+|-----------|-------------|----------|
+| `binary_sensor.*_is_wearing` | Watch wearing status | Wearing (1) or In Motion (2) |
+| `binary_sensor.*_is_moving` | Motion detection | In Motion (2) |
+| `binary_sensor.*_is_sleeping` | Sleep status | Sleeping (1) |
 
-### Health Sensors
-- `sensor.YOUR_DEVICE_battery` - Device battery percentage
-- `sensor.YOUR_DEVICE_blood_oxygen` - Blood oxygen level
-- `sensor.YOUR_DEVICE_stress_value` - Stress level
-- `sensor.YOUR_DEVICE_is_wearing` - Wearing status (Not Wearing/Wearing/In Motion/Not Sure)
+### Diagnostic Sensors
 
-### Device Information Sensors
-- `sensor.YOUR_DEVICE_device_name` - Device model name
-- `sensor.YOUR_DEVICE_nickname` - User nickname
-- `sensor.YOUR_DEVICE_product_id` - Product ID
-- `sensor.YOUR_DEVICE_product_ver` - Product version
+| Entity ID | Description |
+|-----------|-------------|
+| `sensor.*_screen_status` | Screen on/off status |
+| `sensor.*_screen_aod_mode` | Always-on display mode |
+| `sensor.*_screen_light` | Screen brightness level |
 
-**Full list:** The integration creates 50+ sensors covering all available metrics from your Zepp device.
+---
+
+## 🌐 Web Dashboard
+
+The webhook URL doubles as a web dashboard! Open it in your browser to access:
+
+### Main Dashboard (`/api/zepp2hass/your_device`)
+
+- 📋 **Webhook URL** - Copy with one click
+- 📊 **Latest Payload** - Interactive JSON viewer with expand/collapse
+- 🔄 **Status Indicator** - Shows if data has been received
+
+### Error Log (`/api/zepp2hass/your_device/log`)
+
+- 📋 **Error History** - View logged errors from payloads
+- ⏰ **Timestamps** - See when each error occurred
+- 🔍 **Error Details** - Full error message display
+
+> Errors are captured from the `last_error` field in payloads and stored (up to 100 entries).
 
 ---
 
@@ -162,7 +215,7 @@ The integration creates sensors for all available metrics. Here are some key one
 
 ### Automations
 
-**Example 1: Notify when battery is low**
+**Notify when battery is low:**
 ```yaml
 automation:
   - alias: "Zepp Battery Low"
@@ -173,24 +226,25 @@ automation:
     action:
       - service: notify.mobile_app_your_phone
         data:
-          message: "Your Zepp watch battery is low ({{ states('sensor.my_zepp_watch_battery') }}%)"
+          message: "🔋 Watch battery low: {{ states('sensor.my_zepp_watch_battery') }}%"
 ```
 
-**Example 2: Track daily steps goal**
+**Track daily steps goal:**
 ```yaml
 automation:
   - alias: "Daily Steps Goal Reached"
     trigger:
-      - platform: numeric_state
-        entity_id: sensor.my_zepp_watch_steps
-        above: 10000
+      - platform: template
+        value_template: >
+          {{ states('sensor.my_zepp_watch_steps') | int >= 
+             state_attr('sensor.my_zepp_watch_steps', 'target') | int }}
     action:
       - service: notify.mobile_app_your_phone
         data:
-          message: "🎉 Congratulations! You've reached 10,000 steps today!"
+          message: "🎉 You've reached your step goal!"
 ```
 
-**Example 3: Monitor sleep quality**
+**Alert on poor sleep:**
 ```yaml
 automation:
   - alias: "Poor Sleep Alert"
@@ -201,31 +255,71 @@ automation:
     action:
       - service: notify.mobile_app_your_phone
         data:
-          message: "Your sleep score was {{ states('sensor.my_zepp_watch_sleep_score') }}. Consider improving your sleep routine."
+          message: >
+            😴 Sleep score: {{ states('sensor.my_zepp_watch_sleep_score') }} points.
+            Consider improving your sleep routine.
+```
+
+**Detect when watch is removed:**
+```yaml
+automation:
+  - alias: "Watch Removed Alert"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.my_zepp_watch_is_wearing
+        to: "off"
+    action:
+      - service: notify.mobile_app_your_phone
+        data:
+          message: "⌚ Your Zepp watch has been removed"
 ```
 
 ### Lovelace Dashboard Cards
 
-**Activity Card:**
+**Health Overview Card:**
 ```yaml
 type: entities
-title: Zepp Activity
+title: 🏃 Zepp Health
 entities:
   - entity: sensor.my_zepp_watch_steps
     name: Steps
+    secondary_info: attribute
+    attribute: target
+  - entity: sensor.my_zepp_watch_heart_rate_last
+    name: Heart Rate
   - entity: sensor.my_zepp_watch_calories
     name: Calories
-  - entity: sensor.my_zepp_watch_distance
-    name: Distance
+  - entity: sensor.my_zepp_watch_battery
+    name: Battery
 ```
 
-**Health Card:**
+**Heart Rate Gauge:**
 ```yaml
 type: gauge
 entity: sensor.my_zepp_watch_heart_rate_last
-name: Heart Rate
-min: 0
-max: 200
+name: ❤️ Heart Rate
+min: 40
+max: 180
+segments:
+  - from: 40
+    color: "#43A047"
+  - from: 100
+    color: "#FFA726"
+  - from: 140
+    color: "#E53935"
+```
+
+**Sleep Stats:**
+```yaml
+type: statistics-graph
+title: 😴 Sleep Score
+entities:
+  - sensor.my_zepp_watch_sleep_score
+days_to_show: 7
+stat_types:
+  - mean
+  - min
+  - max
 ```
 
 ---
@@ -234,37 +328,96 @@ max: 200
 
 ### Sensors not updating?
 
-1. **Check webhook URL**: Verify your Zepp app/automation is sending data to the correct webhook URL
-2. **Check logs**: Look for errors in Home Assistant logs (`Settings` → `System` → `Logs`)
-3. **Verify payload format**: Ensure your webhook is sending valid JSON
-4. **Check device name**: Make sure the device name matches what you configured
+1. **Check the webhook URL** - Visit it in your browser to verify it's accessible
+2. **Check payload format** - Ensure JSON keys match expected structure
+3. **Check Home Assistant logs** - Look for errors under Settings → System → Logs
+4. **Verify network** - Ensure the device sending data can reach Home Assistant
 
-### Webhook not receiving data?
+### Test the webhook with curl
 
-1. **Check firewall**: Ensure Home Assistant can receive incoming connections
-2. **Verify URL**: Double-check the webhook URL format
-3. **Test with curl**: Try sending a test payload:
-   ```bash
-   curl -X POST http://YOUR_HA_IP:8123/api/zepp2hass/YOUR_DEVICE_NAME \
-     -H "Content-Type: application/json" \
-     -d '{"Steps": 1000, "Battery": 80}'
-   ```
+```bash
+curl -X POST http://YOUR_HA_IP:8123/api/zepp2hass/YOUR_DEVICE_NAME \
+  -H "Content-Type: application/json" \
+  -d '{
+    "battery": {"current": 80},
+    "steps": {"current": 5000, "target": 10000},
+    "heart_rate": {"last": 72, "resting": 58},
+    "is_wearing": 1
+  }'
+```
+
+Expected response:
+```json
+{"status": "ok"}
+```
 
 ### Integration not appearing?
 
-1. **Clear browser cache**: Hard refresh (Ctrl+F5 or Cmd+Shift+R)
-2. **Check custom_components**: Verify files are in the correct location
-3. **Restart Home Assistant**: Full restart, not just reload
+1. **Clear browser cache** - Hard refresh (Ctrl+F5 or Cmd+Shift+R)
+2. **Verify file structure** - Ensure all files are in `custom_components/zepp2hass/`
+3. **Restart Home Assistant** - Full restart, not just reload
+4. **Check dependencies** - The integration requires the `http` component
+
+### Webhook returns 400 error?
+
+- Ensure payload is valid JSON
+- Payload must be a JSON object (not array)
+- Check for syntax errors in the JSON
 
 ---
 
-## 📝 Wearing Status Values
+## 📝 Status Mappings
 
-The `is_wearing` sensor displays human-readable status:
-- `0` → **Not Wearing**
-- `1` → **Wearing**
-- `2` → **In Motion**
-- `3` → **Not Sure**
+### `is_wearing` Values
+
+| Value | Description | Binary Sensors |
+|-------|-------------|----------------|
+| 0 | Not Wearing | `is_wearing`: OFF, `is_moving`: OFF |
+| 1 | Wearing | `is_wearing`: ON, `is_moving`: OFF |
+| 2 | In Motion | `is_wearing`: ON, `is_moving`: ON |
+| 3 | Not Sure | `is_wearing`: OFF, `is_moving`: OFF |
+
+### `sleep.status` Values
+
+| Value | Description | Binary Sensor |
+|-------|-------------|---------------|
+| 0 | Awake | `is_sleeping`: OFF |
+| 1 | Sleeping | `is_sleeping`: ON |
+| 2 | Not Sure | `is_sleeping`: OFF |
+
+---
+
+## 🏗️ Architecture
+
+```
+Zepp App / Automation
+        │
+        ▼ POST JSON
+┌───────────────────────────────────────┐
+│  Home Assistant                        │
+│  ┌─────────────────────────────────┐  │
+│  │  Zepp2Hass Integration          │  │
+│  │  /api/zepp2hass/{device_name}   │  │
+│  │                                  │  │
+│  │  ┌────────────────────────────┐ │  │
+│  │  │ Webhook Handler            │ │  │
+│  │  │ - Parse JSON               │ │  │
+│  │  │ - Store latest payload     │ │  │
+│  │  │ - Dispatch update signal   │ │  │
+│  │  └────────────────────────────┘ │  │
+│  │              │                   │  │
+│  │              ▼                   │  │
+│  │  ┌────────────────────────────┐ │  │
+│  │  │ Sensors                    │ │  │
+│  │  │ - Regular sensors          │ │  │
+│  │  │ - Sensors with targets     │ │  │
+│  │  │ - Binary sensors           │ │  │
+│  │  │ - Special sensors (PAI,    │ │  │
+│  │  │   Blood Oxygen, Workouts)  │ │  │
+│  │  └────────────────────────────┘ │  │
+│  └─────────────────────────────────┘  │
+└───────────────────────────────────────┘
+```
 
 ---
 
@@ -288,7 +441,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Zepp for creating amazing smartwatch devices
+- Zepp/Amazfit for creating amazing smartwatch devices
 - Home Assistant community for inspiration and support
 - HACS for making custom integrations easy to install
 

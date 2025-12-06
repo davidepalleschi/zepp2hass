@@ -387,7 +387,7 @@ class _ZeppWebhookView(HomeAssistantView):
         }}
         
         .json-collapsible {{
-            margin-left: 10px;
+            margin-left: 8px;
         }}
         
         .json-collapsed {{
