@@ -10,9 +10,9 @@
 
 **Connect your Zepp smartwatch to Home Assistant and track your health & fitness data in real-time! 📊**
 
-[![GitHub release](https://img.shields.io/github/release/davidepalleschi/zepp2homeassistant.svg)](https://github.com/davidepalleschi/zepp2homeassistant/releases)
-[![GitHub issues](https://img.shields.io/github/issues/davidepalleschi/zepp2homeassistant.svg)](https://github.com/davidepalleschi/zepp2homeassistant/issues)
-[![License](https://img.shields.io/github/license/davidepalleschi/zepp2homeassistant.svg)](https://github.com/davidepalleschi/zepp2homeassistant/blob/main/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/davidepalleschi/zepp2hass.svg)](https://github.com/davidepalleschi/zepp2hass/releases)
+[![GitHub issues](https://img.shields.io/github/issues/davidepalleschi/zepp2hass.svg)](https://github.com/davidepalleschi/zepp2hass/issues)
+[![License](https://img.shields.io/github/license/davidepalleschi/zepp2hass.svg)](https://github.com/davidepalleschi/zepp2hass/blob/main/LICENSE)
 
 </div>
 
@@ -55,7 +55,7 @@ The integration creates multiple sensor types:
 3. Click the three dots (⋮) in the top right corner
 4. Select **Custom repositories**
 5. Add this repository:
-   - **Repository**: `https://github.com/davidepalleschi/zepp2homeassistant`
+   - **Repository**: `https://github.com/davidepalleschi/zepp2hass`
    - **Category**: Integration
 6. Click **Add**
 7. Search for **Zepp2Hass** in HACS
@@ -64,7 +64,7 @@ The integration creates multiple sensor types:
 
 ### Option 2: Manual Installation
 
-1. Download the latest release from the [Releases](https://github.com/davidepalleschi/zepp2homeassistant/releases) page
+1. Download the latest release from the [Releases](https://github.com/davidepalleschi/zepp2hass/releases) page
 2. Extract the `zepp2hass` folder
 3. Copy it to your `custom_components` directory:
    ```
@@ -449,9 +449,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 🐛 **Found a bug?** [Open an issue](https://github.com/davidepalleschi/zepp2homeassistant/issues)
-- 💡 **Have a feature request?** [Create a feature request](https://github.com/davidepalleschi/zepp2homeassistant/issues/new)
-- 📧 **Questions?** Check the [Issues](https://github.com/davidepalleschi/zepp2homeassistant/issues) page
+- 🐛 **Found a bug?** [Open an issue](https://github.com/davidepalleschi/zepp2hass/issues)
+- 💡 **Have a feature request?** [Create a feature request](https://github.com/davidepalleschi/zepp2hass/issues/new)
+- 📧 **Questions?** Check the [Issues](https://github.com/davidepalleschi/zepp2hass/issues) page
 
 ---
 
