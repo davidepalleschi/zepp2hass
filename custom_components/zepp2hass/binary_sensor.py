@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
@@ -52,32 +51,28 @@ class IsWearingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], Binary
         self._attr_name = f"{coordinator.device_name} Is Wearing"
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_is_wearing_binary"
         self._attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.is_on is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        return data is not None and data.get("is_wearing") is not None
 
     @property
     def is_on(self) -> bool | None:
         """Return True if wearing."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        wearing_status = self.coordinator.data.get("is_wearing")
+        wearing_status = data.get("is_wearing")
         if wearing_status is None:
             return None
         
@@ -91,9 +86,7 @@ class IsWearingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], Binary
     @property
     def icon(self) -> str:
         """Return the icon based on state."""
-        if self.is_on:
-            return "mdi:watch"
-        return "mdi:watch-off"
+        return "mdi:watch" if self.is_on else "mdi:watch-off"
 
 
 class IsMovingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], BinarySensorEntity):
@@ -107,32 +100,28 @@ class IsMovingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], BinaryS
         self._attr_name = f"{coordinator.device_name} Is Moving"
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_is_moving_binary"
         self._attr_device_class = BinarySensorDeviceClass.MOTION
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.is_on is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        return data is not None and data.get("is_wearing") is not None
 
     @property
     def is_on(self) -> bool | None:
         """Return True if in motion."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        wearing_status = self.coordinator.data.get("is_wearing")
+        wearing_status = data.get("is_wearing")
         if wearing_status is None:
             return None
         
@@ -146,9 +135,7 @@ class IsMovingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], BinaryS
     @property
     def icon(self) -> str:
         """Return the icon based on state."""
-        if self.is_on:
-            return "mdi:run"
-        return "mdi:human-handsdown"
+        return "mdi:run" if self.is_on else "mdi:human-handsdown"
 
 
 class IsSleepingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], BinarySensorEntity):
@@ -161,32 +148,31 @@ class IsSleepingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], Binar
         # Set entity attributes
         self._attr_name = f"{coordinator.device_name} Is Sleeping"
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_is_sleeping_binary"
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.is_on is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        sleep_status, found = get_nested_value(data, "sleep.status")
+        return found and sleep_status is not None
 
     @property
     def is_on(self) -> bool | None:
         """Return True if sleeping."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        sleep_status, found = get_nested_value(self.coordinator.data, "sleep.status")
+        sleep_status, found = get_nested_value(data, "sleep.status")
         if not found:
             return None
         
@@ -199,6 +185,4 @@ class IsSleepingBinarySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], Binar
     @property
     def icon(self) -> str:
         """Return the icon based on state."""
-        if self.is_on:
-            return "mdi:sleep"
-        return "mdi:sleep-off"
+        return "mdi:sleep" if self.is_on else "mdi:sleep-off"

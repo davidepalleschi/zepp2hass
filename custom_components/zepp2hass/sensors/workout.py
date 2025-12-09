@@ -28,49 +28,49 @@ class WorkoutStatusSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEn
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_training_load"
         self._attr_icon = "mdi:dumbbell"
         self._attr_native_unit_of_measurement = "points"
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.native_value is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        _, found = get_nested_value(data, "workout.status.trainingLoad")
+        return found
 
     @property
     def native_value(self) -> Any:
         """Return the state of the sensor (training load)."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        training_load, found = get_nested_value(self.coordinator.data, "workout.status.trainingLoad")
+        training_load, found = get_nested_value(data, "workout.status.trainingLoad")
         return training_load if found else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return {}
         
         attributes = {}
         
         # VO2 Max
-        vo2_max, vo2_found = get_nested_value(self.coordinator.data, "workout.status.vo2Max")
+        vo2_max, vo2_found = get_nested_value(data, "workout.status.vo2Max")
         if vo2_found and vo2_max is not None:
             attributes["vo2_max"] = vo2_max
         
         # Full Recovery Time (in hours)
-        recovery_time, recovery_found = get_nested_value(self.coordinator.data, "workout.status.fullRecoveryTime")
+        recovery_time, recovery_found = get_nested_value(data, "workout.status.fullRecoveryTime")
         if recovery_found and recovery_time is not None:
             attributes["full_recovery_time_hours"] = recovery_time
         
@@ -88,58 +88,36 @@ class WorkoutLastSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEnti
         self._attr_name = f"{coordinator.device_name} Last Workout"
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_last_workout"
         self._attr_icon = "mdi:run"
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.native_value is not None
-
-    def _get_sorted_history(self) -> list[dict]:
-        """Get sorted workout history (most recent first). Cached per coordinator update."""
-        if not self.coordinator.data:
-            return []
-        
-        workout_data = self.coordinator.data.get("workout", {})
-        history = workout_data.get("history", [])
-        
-        if not history:
-            return []
-        
-        # Sort only if needed
-        return sorted(history, key=lambda x: x.get("startTime", 0), reverse=True)
+        if not self.coordinator.last_update_success:
+            return False
+        return self.coordinator.last_workout is not None
 
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor (sport type name)."""
-        sorted_history = self._get_sorted_history()
-        if not sorted_history:
+        # Use coordinator's optimized last_workout property (uses max() instead of sort)
+        last_workout = self.coordinator.last_workout
+        if not last_workout:
             return None
         
-        last_workout = sorted_history[0]
         sport_type_id = last_workout.get("sportType")
         return format_sport_type(sport_type_id) if sport_type_id else "Unknown"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        sorted_history = self._get_sorted_history()
-        if not sorted_history:
+        last_workout = self.coordinator.last_workout
+        if not last_workout:
             return {}
-        
-        last_workout = sorted_history[0]
         
         attributes = {
             "sport_type_id": last_workout.get("sportType"),
@@ -172,32 +150,31 @@ class WorkoutHistorySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorE
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_workout_history"
         self._attr_icon = "mdi:counter"
         self._attr_native_unit_of_measurement = "workouts"
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.native_value is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        workout_data = data.get("workout", {})
+        return bool(workout_data.get("history"))
 
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor (workout count)."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        workout_data = self.coordinator.data.get("workout", {})
+        workout_data = data.get("workout", {})
         history = workout_data.get("history", [])
         
         if not history:
@@ -208,17 +185,10 @@ class WorkoutHistorySensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorE
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        if not self.coordinator.data:
+        # Use coordinator's cached sorted history
+        sorted_history = self.coordinator.sorted_workout_history
+        if not sorted_history:
             return {}
-        
-        workout_data = self.coordinator.data.get("workout", {})
-        history = workout_data.get("history", [])
-        
-        if not history:
-            return {}
-        
-        # Sort and format recent workouts
-        sorted_history = sorted(history, key=lambda x: x.get("startTime", 0), reverse=True)
         
         recent_list = []
         for workout in sorted_history[:10]:

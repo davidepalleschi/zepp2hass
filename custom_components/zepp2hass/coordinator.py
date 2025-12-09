@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
@@ -30,13 +31,67 @@ class ZeppDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self.entry_id = entry_id
         self.device_name = device_name
-        # Store the latest payload
-        self._latest_data: dict[str, Any] = {}
+        
+        # Shared DeviceInfo for all entities (created once)
+        self._device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            manufacturer="Zepp",
+            model="Zepp Smartwatch",
+            name=device_name,
+        )
+        
+        # Cache for computed data (cleared on each update)
+        self._sorted_workout_history: list[dict] | None = None
 
     @property
-    def latest_data(self) -> dict[str, Any]:
-        """Return the latest data received."""
-        return self._latest_data
+    def device_info(self) -> DeviceInfo:
+        """Return shared device info for all entities."""
+        return self._device_info
+
+    @property
+    def sorted_workout_history(self) -> list[dict]:
+        """Get sorted workout history (most recent first).
+        
+        Cached to avoid re-sorting on each property access.
+        """
+        if self._sorted_workout_history is not None:
+            return self._sorted_workout_history
+        
+        if not self.data:
+            return []
+        
+        workout_data = self.data.get("workout", {})
+        history = workout_data.get("history", [])
+        
+        if not history:
+            self._sorted_workout_history = []
+            return []
+        
+        # Sort once and cache
+        self._sorted_workout_history = sorted(
+            history, 
+            key=lambda x: x.get("startTime", 0), 
+            reverse=True
+        )
+        return self._sorted_workout_history
+
+    @property
+    def last_workout(self) -> dict | None:
+        """Get the most recent workout without sorting the entire list.
+        
+        Uses max() which is O(n) instead of sort which is O(n log n).
+        """
+        if not self.data:
+            return None
+        
+        workout_data = self.data.get("workout", {})
+        history = workout_data.get("history", [])
+        
+        if not history:
+            return None
+        
+        # Find max by startTime - more efficient than sorting for single item
+        return max(history, key=lambda x: x.get("startTime", 0))
 
     @callback
     def async_set_updated_data(self, data: dict[str, Any]) -> None:
@@ -45,7 +100,9 @@ class ZeppDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         This is called from the webhook handler when new data arrives.
         All entities listening to this coordinator will be updated in a single batch.
         """
-        self._latest_data = data
+        # Clear cached computed data when new data arrives
+        self._sorted_workout_history = None
+        
         # Call parent method which handles notifying all listeners efficiently
         super().async_set_updated_data(data)
 
@@ -54,5 +111,4 @@ class ZeppDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         
         Returns the latest cached data.
         """
-        return self._latest_data
-
+        return self.data if self.data else {}

@@ -1,11 +1,21 @@
 """Formatting functions for Zepp2Hass sensors."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, date
+from functools import lru_cache
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from .mappings import GENDER_MAP, SPORT_TYPE_MAP
+
+
+# Cache for midnight calculation (invalidated daily)
+_midnight_cache: tuple[date, datetime] | None = None
+
+
+@lru_cache(maxsize=64)
+def _split_path(path: str) -> tuple[str, ...]:
+    """Split a dot-separated path into keys. Cached for performance."""
+    return tuple(path.split("."))
 
 
 def get_nested_value(data: dict[str, Any], path: str) -> tuple[Any, bool]:
@@ -14,7 +24,7 @@ def get_nested_value(data: dict[str, Any], path: str) -> tuple[Any, bool]:
     Returns:
         tuple: (value, found) where found is True if path exists, False otherwise
     """
-    keys = path.split(".")
+    keys = _split_path(path)
     value = data
     for key in keys:
         if isinstance(value, dict) and key in value:
@@ -98,6 +108,23 @@ def format_body_temp(value: Any) -> Any:
     return value
 
 
+def _get_yesterday_midnight() -> datetime:
+    """Get yesterday's midnight datetime, cached per day for performance."""
+    global _midnight_cache
+    
+    today = date.today()
+    if _midnight_cache is not None and _midnight_cache[0] == today:
+        return _midnight_cache[1]
+    
+    # Calculate new midnight (only once per day)
+    now = datetime.now().astimezone()
+    today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    yesterday_midnight = today_midnight - timedelta(days=1)
+    
+    _midnight_cache = (today, yesterday_midnight)
+    return yesterday_midnight
+
+
 def format_sleep_time(value: Any) -> datetime | Any:
     """Format sleep start/end time from minutes since midnight to datetime with timezone.
 
@@ -107,18 +134,9 @@ def format_sleep_time(value: Any) -> datetime | Any:
     Returns a timezone-aware datetime object for Home Assistant TIMESTAMP sensors.
     """
     if isinstance(value, (int, float)):
-        # Get today's date at midnight with local timezone
-        now = datetime.now().astimezone()
-        local_tz = now.tzinfo
-        today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-        # Calculate the datetime starting from yesterday's midnight
-        # Sleep times are counted from the previous day's midnight
-        yesterday_midnight = today_midnight - timedelta(days=1)
-        sleep_datetime = yesterday_midnight + timedelta(minutes=int(value))
-
-        # Return datetime with timezone for TIMESTAMP sensor
-        return sleep_datetime
+        # Use cached yesterday midnight (recalculated once per day)
+        yesterday_midnight = _get_yesterday_midnight()
+        return yesterday_midnight + timedelta(minutes=int(value))
 
     return value
 

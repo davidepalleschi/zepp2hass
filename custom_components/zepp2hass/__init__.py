@@ -4,8 +4,10 @@ from __future__ import annotations
 from collections import deque
 import json
 import logging
+import time
 from datetime import datetime
 from pathlib import Path
+from string import Template
 from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
@@ -21,25 +23,74 @@ _LOGGER = logging.getLogger(__name__)
 # Maximum number of error logs to keep
 MAX_ERROR_LOGS = 100
 
+# Rate limiting settings
+RATE_LIMIT_REQUESTS = 30  # Maximum requests
+RATE_LIMIT_WINDOW = 60  # Time window in seconds
+
+
+class RateLimiter:
+    """Simple sliding window rate limiter."""
+    
+    __slots__ = ("_requests", "_max_requests", "_window_seconds")
+    
+    def __init__(self, max_requests: int, window_seconds: int) -> None:
+        """Initialize rate limiter."""
+        self._requests: deque[float] = deque()
+        self._max_requests = max_requests
+        self._window_seconds = window_seconds
+    
+    def is_allowed(self) -> bool:
+        """Check if a new request is allowed."""
+        now = time.monotonic()
+        cutoff = now - self._window_seconds
+        
+        # Remove old requests outside the window
+        while self._requests and self._requests[0] < cutoff:
+            self._requests.popleft()
+        
+        # Check if under limit
+        if len(self._requests) >= self._max_requests:
+            return False
+        
+        # Record this request
+        self._requests.append(now)
+        return True
+
 # Cache for HTML templates (loaded once at startup)
-_TEMPLATE_CACHE: dict[str, str] = {}
+_TEMPLATE_CACHE: dict[str, Template] = {}
+_RAW_TEMPLATE_CACHE: dict[str, str] = {}
 
 
-def _load_template(name: str) -> str:
-    """Load HTML template from file, with caching."""
+def _load_template(name: str) -> Template:
+    """Load HTML template from file as string.Template, with caching."""
     if name not in _TEMPLATE_CACHE:
         template_path = Path(__file__).parent / "frontend" / name
         try:
-            _TEMPLATE_CACHE[name] = template_path.read_text(encoding="utf-8")
+            content = template_path.read_text(encoding="utf-8")
+            # Convert {{VAR}} syntax to $VAR for string.Template
+            content = content.replace("{{", "${").replace("}}", "}")
+            _TEMPLATE_CACHE[name] = Template(content)
         except FileNotFoundError:
             _LOGGER.error("Template file not found: %s", template_path)
-            _TEMPLATE_CACHE[name] = f"<html><body>Template {name} not found</body></html>"
+            _TEMPLATE_CACHE[name] = Template("<html><body>Template $name not found</body></html>")
     return _TEMPLATE_CACHE[name]
+
+
+def _load_raw_template(name: str) -> str:
+    """Load raw template content without Template conversion (for CSS)."""
+    if name not in _RAW_TEMPLATE_CACHE:
+        template_path = Path(__file__).parent / "frontend" / name
+        try:
+            _RAW_TEMPLATE_CACHE[name] = template_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            _LOGGER.error("Template file not found: %s", template_path)
+            _RAW_TEMPLATE_CACHE[name] = ""
+    return _RAW_TEMPLATE_CACHE[name]
 
 
 def _load_css() -> str:
     """Load CSS file, with caching."""
-    return _load_template("style.css")
+    return _load_raw_template("style.css")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -67,12 +118,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Use deque for efficient error log management (auto-limits size)
     error_logs: deque[dict] = deque(maxlen=MAX_ERROR_LOGS)
 
+    # Create rate limiter for this device
+    rate_limiter = RateLimiter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW)
+
     # Store data for this entry
     hass.data[DOMAIN][entry_id] = {
         "coordinator": coordinator,
         "webhook_url": url,
         "webhook_full_url": full_webhook_url,
         "error_logs": error_logs,
+        "rate_limiter": rate_limiter,
     }
 
     # Create and register views
@@ -166,9 +221,6 @@ class _ZeppWebhookView(HomeAssistantView):
         json_data = json.dumps(latest_payload, ensure_ascii=False) if latest_payload else "null"
         
         has_data = latest_payload is not None
-        status_class = "success" if has_data else "warning"
-        status_text = "Data received" if has_data else "No data"
-        controls_display = "display: flex;" if has_data else "display: none;"
         
         if has_data:
             json_container = '<div class="json-viewer" id="jsonViewer"></div>'
@@ -181,17 +233,17 @@ class _ZeppWebhookView(HomeAssistantView):
                 <p>Send a POST request to the webhook URL above from your Zepp app</p>
             </div>'''
         
-        # Simple template substitution
-        html = template.replace("{{STATIC_URL}}", self.static_url)
-        html = html.replace("{{WEBHOOK_PATH}}", self.webhook_path)
-        html = html.replace("{{WEBHOOK_URL}}", webhook_url)
-        html = html.replace("{{STATUS_CLASS}}", status_class)
-        html = html.replace("{{STATUS_TEXT}}", status_text)
-        html = html.replace("{{CONTROLS_DISPLAY}}", controls_display)
-        html = html.replace("{{JSON_CONTAINER}}", json_container)
-        html = html.replace("{{JSON_DATA}}", json_data)
-        
-        return html
+        # Single-pass template substitution using string.Template (more efficient)
+        return template.safe_substitute(
+            STATIC_URL=self.static_url,
+            WEBHOOK_PATH=self.webhook_path,
+            WEBHOOK_URL=webhook_url,
+            STATUS_CLASS="success" if has_data else "warning",
+            STATUS_TEXT="Data received" if has_data else "No data",
+            CONTROLS_DISPLAY="display: flex;" if has_data else "display: none;",
+            JSON_CONTAINER=json_container,
+            JSON_DATA=json_data,
+        )
 
     async def get(self, request: web.Request) -> web.Response:
         """Handle GET request - display latest JSON payload in browser."""
@@ -205,6 +257,19 @@ class _ZeppWebhookView(HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:
         """Handle POST request from webhook."""
+        entry_data = self.hass.data.get(DOMAIN, {}).get(self.entry_id)
+        if not entry_data:
+            return web.json_response({"error": "Entry not found"}, status=404)
+
+        # Check rate limit first (before parsing body)
+        rate_limiter: RateLimiter = entry_data["rate_limiter"]
+        if not rate_limiter.is_allowed():
+            _LOGGER.warning("Zepp2Hass: rate limit exceeded for %s", self.entry_id)
+            return web.json_response(
+                {"error": "Rate limit exceeded", "message": f"Max {RATE_LIMIT_REQUESTS} requests per {RATE_LIMIT_WINDOW} seconds"},
+                status=429
+            )
+
         try:
             payload = await request.json()
         except Exception as exc:
@@ -220,10 +285,6 @@ class _ZeppWebhookView(HomeAssistantView):
                 {"error": "Invalid payload", "message": "Payload must be a JSON object"},
                 status=400
             )
-
-        entry_data = self.hass.data.get(DOMAIN, {}).get(self.entry_id)
-        if not entry_data:
-            return web.json_response({"error": "Entry not found"}, status=404)
 
         coordinator: ZeppDataUpdateCoordinator = entry_data["coordinator"]
         error_logs: deque = entry_data["error_logs"]
@@ -308,10 +369,13 @@ class _ZeppLogView(HomeAssistantView):
         else:
             error_list = self._render_no_errors()
         
-        html = template.replace("{{STATIC_URL}}", self.static_url)
-        html = html.replace("{{WEBHOOK_PATH}}", self.webhook_path)
-        html = html.replace("{{ERROR_COUNT}}", error_count)
-        html = html.replace("{{ERROR_LIST}}", error_list)
+        # Single-pass template substitution using string.Template
+        html = template.safe_substitute(
+            STATIC_URL=self.static_url,
+            WEBHOOK_PATH=self.webhook_path,
+            ERROR_COUNT=error_count,
+            ERROR_LIST=error_list,
+        )
         
         return web.Response(text=html, content_type="text/html")
 

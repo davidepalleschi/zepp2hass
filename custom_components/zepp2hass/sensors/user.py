@@ -27,32 +27,28 @@ class UserInfoSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity)
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_user_info"
         self._attr_icon = "mdi:account"
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.native_value is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        return bool(data and data.get("user"))
 
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor (nickname)."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        user_data = self.coordinator.data.get("user", {})
+        user_data = data.get("user", {})
         if not user_data:
             return None
         
@@ -61,10 +57,11 @@ class UserInfoSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity)
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return {}
         
-        user_data = self.coordinator.data.get("user", {})
+        user_data = data.get("user", {})
         if not user_data:
             return {}
         

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity import DeviceInfo
@@ -27,32 +26,32 @@ class BloodOxygenSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEnti
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_blood_oxygen"
         self._attr_icon = "mdi:water-percent"
         self._attr_native_unit_of_measurement = PERCENTAGE
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.native_value is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        blood_oxygen_data = data.get("blood_oxygen", {})
+        few_hours = blood_oxygen_data.get("few_hours", [])
+        return bool(few_hours and isinstance(few_hours, list) and len(few_hours) > 0)
 
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor (SpO2 value)."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        blood_oxygen_data = self.coordinator.data.get("blood_oxygen", {})
+        blood_oxygen_data = data.get("blood_oxygen", {})
         few_hours = blood_oxygen_data.get("few_hours", [])
         
         if few_hours and isinstance(few_hours, list) and len(few_hours) > 0:

@@ -27,41 +27,41 @@ class PAISensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity):
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_pai"
         self._attr_icon = "mdi:chart-bubble"
         self._attr_native_unit_of_measurement = "points"
-        
-        # Cache device info
-        self._cached_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.entry_id)},
-            manufacturer="Zepp",
-            model="Zepp Smartwatch",
-            name=coordinator.device_name,
-        )
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
-        return self._cached_device_info
+        return self.coordinator.device_info
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.coordinator.last_update_success and self.native_value is not None
+        if not self.coordinator.last_update_success:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        _, found = get_nested_value(data, "pai.week")
+        return found
 
     @property
     def native_value(self) -> Any:
         """Return the state of the sensor (PAI week value)."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
         
-        pai_week, found = get_nested_value(self.coordinator.data, "pai.week")
+        pai_week, found = get_nested_value(data, "pai.week")
         return pai_week if found else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return {}
         
-        pai_day, found = get_nested_value(self.coordinator.data, "pai.day")
+        pai_day, found = get_nested_value(data, "pai.day")
         if found and pai_day is not None:
             return {"today": pai_day}
         
