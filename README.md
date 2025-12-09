@@ -24,6 +24,8 @@
 
 Zepp2Hass receives data from your Zepp smartwatch via a local webhook endpoint. When you configure the integration, it creates a unique webhook URL that accepts JSON payloads with all your health metrics.
 
+**Rate limiting** is built-in to protect your Home Assistant instance: max 30 requests per 60 seconds per device.
+
 ### 🌐 Built-in Web Dashboard
 
 Each webhook comes with a **beautiful web dashboard** accessible via browser! Simply visit your webhook URL in a browser to:
@@ -35,14 +37,17 @@ Each webhook comes with a **beautiful web dashboard** accessible via browser! Si
 
 ### 📊 Comprehensive Sensor Suite
 
-The integration creates multiple sensor types:
+The integration creates multiple sensor types organized by category:
 
-| Category | Description |
-|----------|-------------|
-| **Regular Sensors** | Battery, Heart Rate, Sleep, Stress, Temperature, Distance |
-| **Goal Sensors** | Steps, Calories, Fat Burning, Stands (with target as attribute) |
+| Category | Sensors |
+|----------|---------|
+| **Health** | Heart Rate (last, resting, max), Body Temperature, Stress, Blood Oxygen |
+| **Activity** | Steps, Calories, Fat Burning, Stands, Distance (all with goal targets) |
+| **Sleep** | Sleep Score, Total Duration, Deep Sleep, Sleep Start/End Time |
+| **Workout** | Training Load, Last Workout, Workout History, VO2 Max |
+| **Device** | Battery, Screen Status/AOD/Brightness, Device Info, User Info |
+| **PAI** | Weekly PAI score with daily PAI as attribute |
 | **Binary Sensors** | Is Wearing, Is Moving, Is Sleeping |
-| **Special Sensors** | PAI (week + day), Blood Oxygen, Workouts, Device/User Info |
 
 ---
 
@@ -118,6 +123,8 @@ Send POST requests with JSON payloads to your webhook URL. The integration expec
   },
   "steps": { "current": 8500, "target": 10000 },
   "calorie": { "current": 450, "target": 600 },
+  "fat_burning": { "current": 30, "target": 45 },
+  "stands": { "current": 8, "target": 12 },
   "distance": { "current": 6200 },
   "sleep": {
     "status": 0,
@@ -131,65 +138,44 @@ Send POST requests with JSON payloads to your webhook URL. The integration expec
   },
   "blood_oxygen": {
     "few_hours": [
-      { "value": 98, "time": "2024-01-15T10:00:00" }
+      { "spo2": 98, "time": "2024-01-15T10:00:00" }
     ]
   },
   "stress": { "current": { "value": 25 } },
+  "body_temperature": { "current": { "value": 36.5 } },
   "is_wearing": 1,
-  "pai": { "day": 45, "week": 280 }
+  "pai": { "day": 45, "week": 280 },
+  "screen": { "status": 1, "aod_mode": true, "light": 80 },
+  "workout": {
+    "status": {
+      "trainingLoad": 150,
+      "vo2Max": 45,
+      "fullRecoveryTime": 24
+    },
+    "history": [
+      {
+        "sportType": 1,
+        "startTime": "2024-01-15T08:00:00",
+        "duration": 1800
+      }
+    ]
+  },
+  "device": {
+    "deviceName": "Amazfit GTR 4",
+    "width": 466,
+    "height": 466,
+    "hasNFC": true,
+    "hasMic": true
+  },
+  "user": {
+    "nickName": "John",
+    "age": 30,
+    "gender": 0,
+    "height": 180,
+    "weight": 75
+  }
 }
 ```
-
----
-
-## 📊 Available Entities
-
-### Sensors
-
-| Entity ID | Description | Unit | Device Class |
-|-----------|-------------|------|--------------|
-| `sensor.*_record_time` | Last data update timestamp | - | - |
-| `sensor.*_battery` | Device battery level | % | Battery |
-| `sensor.*_heart_rate_last` | Last heart rate reading | bpm | - |
-| `sensor.*_heart_rate_resting` | Resting heart rate | bpm | - |
-| `sensor.*_heart_rate_max` | Maximum heart rate | bpm | - |
-| `sensor.*_steps` | Step count (target as attribute) | steps | - |
-| `sensor.*_calories` | Calories burned (target as attribute) | kcal | Energy |
-| `sensor.*_distance` | Distance traveled | m | Distance |
-| `sensor.*_fat_burning` | Fat burning duration (target as attribute) | min | Duration |
-| `sensor.*_stands` | Stand count (target as attribute) | times | - |
-| `sensor.*_sleep_score` | Sleep quality score | points | - |
-| `sensor.*_sleep_total` | Total sleep duration | min | Duration |
-| `sensor.*_sleep_deep` | Deep sleep duration | min | Duration |
-| `sensor.*_sleep_start` | Sleep start time | - | Timestamp |
-| `sensor.*_sleep_end` | Sleep end time | - | Timestamp |
-| `sensor.*_stress_value` | Stress level | points | - |
-| `sensor.*_body_temperature` | Body temperature | °C | Temperature |
-| `sensor.*_blood_oxygen` | Blood oxygen level (with history) | % | - |
-| `sensor.*_pai` | PAI week score (day as attribute) | points | - |
-| `sensor.*_device_info` | Device information (model, version, etc.) | - | - |
-| `sensor.*_user_info` | User information (nickname, gender, etc.) | - | - |
-| `sensor.*_workout_status` | Current workout status | - | - |
-| `sensor.*_workout_last` | Last workout details | - | - |
-| `sensor.*_workout_history` | Workout history | - | - |
-
-### Binary Sensors
-
-| Entity ID | Description | On State |
-|-----------|-------------|----------|
-| `binary_sensor.*_is_wearing` | Watch wearing status | Wearing (1) or In Motion (2) |
-| `binary_sensor.*_is_moving` | Motion detection | In Motion (2) |
-| `binary_sensor.*_is_sleeping` | Sleep status | Sleeping (1) |
-
-### Diagnostic Sensors
-
-| Entity ID | Description |
-|-----------|-------------|
-| `sensor.*_screen_status` | Screen on/off status |
-| `sensor.*_screen_aod_mode` | Always-on display mode |
-| `sensor.*_screen_light` | Screen brightness level |
-
----
 
 ## 🌐 Web Dashboard
 
@@ -266,12 +252,27 @@ automation:
   - alias: "Watch Removed Alert"
     trigger:
       - platform: state
-        entity_id: binary_sensor.my_zepp_watch_is_wearing
+        entity_id: binary_sensor.my_zepp_watch_is_wearing_binary
         to: "off"
     action:
       - service: notify.mobile_app_your_phone
         data:
           message: "⌚ Your Zepp watch has been removed"
+```
+
+**Track workout completion:**
+```yaml
+automation:
+  - alias: "Workout Completed"
+    trigger:
+      - platform: state
+        entity_id: sensor.my_zepp_watch_last_workout
+    action:
+      - service: notify.mobile_app_your_phone
+        data:
+          message: >
+            🏃 Workout completed: {{ states('sensor.my_zepp_watch_last_workout') }}
+            Duration: {{ state_attr('sensor.my_zepp_watch_last_workout', 'duration_minutes') }} min
 ```
 
 ### Lovelace Dashboard Cards
@@ -322,6 +323,22 @@ stat_types:
   - max
 ```
 
+**PAI Progress:**
+```yaml
+type: gauge
+entity: sensor.my_zepp_watch_pai
+name: 🏅 Weekly PAI
+min: 0
+max: 200
+segments:
+  - from: 0
+    color: "#E53935"
+  - from: 50
+    color: "#FFA726"
+  - from: 100
+    color: "#43A047"
+```
+
 ---
 
 ## 🔧 Troubleshooting
@@ -332,6 +349,7 @@ stat_types:
 2. **Check payload format** - Ensure JSON keys match expected structure
 3. **Check Home Assistant logs** - Look for errors under Settings → System → Logs
 4. **Verify network** - Ensure the device sending data can reach Home Assistant
+5. **Check rate limits** - Max 30 requests per 60 seconds per device
 
 ### Test the webhook with curl
 
@@ -364,6 +382,11 @@ Expected response:
 - Payload must be a JSON object (not array)
 - Check for syntax errors in the JSON
 
+### Webhook returns 429 error?
+
+- Rate limit exceeded (max 30 requests per 60 seconds)
+- Wait for the rate limit window to reset
+
 ---
 
 ## 📝 Status Mappings
@@ -385,39 +408,13 @@ Expected response:
 | 1 | Sleeping | `is_sleeping`: ON |
 | 2 | Not Sure | `is_sleeping`: OFF |
 
----
+### `user.gender` Values
 
-## 🏗️ Architecture
-
-```
-Zepp App / Automation
-        │
-        ▼ POST JSON
-┌───────────────────────────────────────┐
-│  Home Assistant                        │
-│  ┌─────────────────────────────────┐  │
-│  │  Zepp2Hass Integration          │  │
-│  │  /api/zepp2hass/{device_name}   │  │
-│  │                                  │  │
-│  │  ┌────────────────────────────┐ │  │
-│  │  │ Webhook Handler            │ │  │
-│  │  │ - Parse JSON               │ │  │
-│  │  │ - Store latest payload     │ │  │
-│  │  │ - Dispatch update signal   │ │  │
-│  │  └────────────────────────────┘ │  │
-│  │              │                   │  │
-│  │              ▼                   │  │
-│  │  ┌────────────────────────────┐ │  │
-│  │  │ Sensors                    │ │  │
-│  │  │ - Regular sensors          │ │  │
-│  │  │ - Sensors with targets     │ │  │
-│  │  │ - Binary sensors           │ │  │
-│  │  │ - Special sensors (PAI,    │ │  │
-│  │  │   Blood Oxygen, Workouts)  │ │  │
-│  │  └────────────────────────────┘ │  │
-│  └─────────────────────────────────┘  │
-└───────────────────────────────────────┘
-```
+| Value | Description |
+|-------|-------------|
+| 0 | Male |
+| 1 | Female |
+| 2 | Other |
 
 ---
 
