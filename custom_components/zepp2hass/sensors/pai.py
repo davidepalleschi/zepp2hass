@@ -1,68 +1,58 @@
-"""PAI sensor for Zepp2Hass."""
+"""PAI sensor for Zepp2Hass.
+
+PAI (Personal Activity Intelligence) is a metric that combines heart rate
+data with personal characteristics to provide a simple, personalized score.
+"""
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .base import ZeppSensorBase
 
-from ..const import DOMAIN
-from ..coordinator import ZeppDataUpdateCoordinator
-from .formatters import get_nested_value
-
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from ..coordinator import ZeppDataUpdateCoordinator
 
 
-class PAISensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity):
-    """PAI sensor with week value as main state and day as attribute."""
+class PAISensor(ZeppSensorBase):
+    """PAI (Personal Activity Intelligence) sensor.
+
+    Main value is the weekly PAI score.
+    Exposes daily PAI as an attribute for more granular tracking.
+
+    A weekly PAI score of 100+ is associated with reduced mortality risk.
+    """
+
+    _WEEK_PATH = "pai.week"
+    _DAY_PATH = "pai.day"
 
     def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
         """Initialize the PAI sensor."""
-        super().__init__(coordinator)
-        
-        # Set entity attributes
-        self._attr_name = f"{coordinator.device_name} PAI"
-        self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_pai"
-        self._attr_icon = "mdi:chart-bubble"
-        self._attr_native_unit_of_measurement = "points"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return self.coordinator.device_info
+        super().__init__(
+            coordinator=coordinator,
+            key="pai",
+            name="PAI",
+            icon="mdi:chart-bubble",
+            unit="points",
+        )
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        if not self.coordinator.last_update_success:
+        """Return True if entity is available (weekly PAI exists)."""
+        if not self._is_coordinator_ready():
             return False
-        data = self.coordinator.data
-        if not data:
-            return False
-        _, found = get_nested_value(data, "pai.week")
+        _, found = self._get_value(self._WEEK_PATH)
         return found
 
     @property
     def native_value(self) -> Any:
-        """Return the state of the sensor (PAI week value)."""
-        data = self.coordinator.data
-        if not data:
-            return None
-        
-        pai_week, found = get_nested_value(data, "pai.week")
+        """Return the weekly PAI score."""
+        pai_week, found = self._get_value(self._WEEK_PATH)
         return pai_week if found else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra state attributes."""
-        data = self.coordinator.data
-        if not data:
-            return {}
-        
-        pai_day, found = get_nested_value(data, "pai.day")
+        """Return extra state attributes (daily PAI)."""
+        pai_day, found = self._get_value(self._DAY_PATH)
         if found and pai_day is not None:
             return {"today": pai_day}
-        
         return {}

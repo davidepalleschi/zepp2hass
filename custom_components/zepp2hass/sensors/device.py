@@ -1,125 +1,87 @@
-"""Device Info sensor for Zepp2Hass."""
+"""Device Info sensor for Zepp2Hass.
+
+Provides comprehensive device information including hardware capabilities.
+Uses declarative attribute mapping for clean extraction.
+"""
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import Any, Callable, TYPE_CHECKING
 
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity import EntityCategory
 
-from ..const import DOMAIN
-from ..coordinator import ZeppDataUpdateCoordinator
+from .base import ZeppSensorBase
+from .formatters import extract_attributes, format_yes_no, AttributeMapping
+from ..const import DataSection
 
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from ..coordinator import ZeppDataUpdateCoordinator
 
 
-class DeviceInfoSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity):
-    """Consolidated Device Information sensor."""
+# Declarative mapping: source_key -> target_key or (target_key, transform_func)
+_DEVICE_ATTR_MAPPING: AttributeMapping = {
+    # Screen dimensions
+    "width": "width",
+    "height": "height",
+    "screenShape": "screen_shape",
+    # Device identifiers
+    "keyNumber": "key_number",
+    "keyType": "key_type",
+    "deviceSource": "device_source",
+    "deviceColor": "device_color",
+    # Product information
+    "productId": "product_id",
+    "productVer": "product_ver",
+    "skuId": "sku_id",
+    # Display information
+    "barHeight": "bar_height",
+    "pixelFormat": "pixel_format",
+    # Connectivity addresses
+    "bleAddr": "ble_addr",
+    "btAddr": "bt_addr",
+    "wifiAddr": "wifi_addr",
+    # Unique identifier
+    "uuid": "uuid",
+    # Hardware features (with Yes/No transform)
+    "hasNFC": ("has_nfc", format_yes_no),
+    "hasMic": ("has_mic", format_yes_no),
+    "hasCrown": ("has_crown", format_yes_no),
+    "hasBuzzer": ("has_buzzer", format_yes_no),
+    "hasSpeaker": ("has_speaker", format_yes_no),
+}
+
+
+class DeviceInfoSensor(ZeppSensorBase):
+    """Consolidated Device Information sensor.
+
+    Main value is the device name.
+    Exposes hardware features and identifiers as attributes.
+    """
+
+    _SECTION = DataSection.DEVICE
 
     def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
         """Initialize the device info sensor."""
-        super().__init__(coordinator)
-        
-        # Set entity attributes
-        self._attr_name = f"{coordinator.device_name} Device"
-        self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_device_info"
-        self._attr_icon = "mdi:watch-variant"
+        super().__init__(
+            coordinator=coordinator,
+            key="device_info",
+            name="Device",
+            icon="mdi:watch-variant",
+        )
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return self.coordinator.device_info
-
-    @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        if not self.coordinator.last_update_success:
-            return False
-        data = self.coordinator.data
-        return bool(data and data.get("device"))
+        """Return True if entity is available (device section exists)."""
+        return self._is_coordinator_ready() and bool(self._get_section(self._SECTION))
 
     @property
     def native_value(self) -> str | None:
-        """Return the state of the sensor (device name)."""
-        data = self.coordinator.data
-        if not data:
-            return None
-        
-        device_data = data.get("device", {})
-        if not device_data:
-            return None
-        
-        return device_data.get("deviceName", "Unknown Device")
+        """Return the device name."""
+        device_data = self._get_section(self._SECTION)
+        return device_data.get("deviceName", "Unknown Device") if device_data else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra state attributes."""
-        data = self.coordinator.data
-        if not data:
-            return {}
-        
-        device_data = data.get("device", {})
-        if not device_data:
-            return {}
-        
-        attributes = {}
-        
-        # Screen dimensions
-        if "width" in device_data:
-            attributes["width"] = device_data["width"]
-        if "height" in device_data:
-            attributes["height"] = device_data["height"]
-        if "screenShape" in device_data:
-            attributes["screen_shape"] = device_data["screenShape"]
-        
-        # Device identifiers
-        if "keyNumber" in device_data:
-            attributes["key_number"] = device_data["keyNumber"]
-        if "keyType" in device_data:
-            attributes["key_type"] = device_data["keyType"]
-        if "deviceSource" in device_data:
-            attributes["device_source"] = device_data["deviceSource"]
-        if "deviceColor" in device_data:
-            attributes["device_color"] = device_data["deviceColor"]
-        
-        # Product information
-        if "productId" in device_data:
-            attributes["product_id"] = device_data["productId"]
-        if "productVer" in device_data:
-            attributes["product_ver"] = device_data["productVer"]
-        if "skuId" in device_data:
-            attributes["sku_id"] = device_data["skuId"]
-        
-        # Display information
-        if "barHeight" in device_data:
-            attributes["bar_height"] = device_data["barHeight"]
-        if "pixelFormat" in device_data:
-            attributes["pixel_format"] = device_data["pixelFormat"]
-        
-        # Connectivity
-        if "bleAddr" in device_data:
-            attributes["ble_addr"] = device_data["bleAddr"]
-        if "btAddr" in device_data:
-            attributes["bt_addr"] = device_data["btAddr"]
-        if "wifiAddr" in device_data:
-            attributes["wifi_addr"] = device_data["wifiAddr"]
-        
-        # Unique identifier
-        if "uuid" in device_data:
-            attributes["uuid"] = device_data["uuid"]
-        
-        # Hardware features
-        if "hasNFC" in device_data:
-            attributes["has_nfc"] = "Yes" if device_data["hasNFC"] else "No"
-        if "hasMic" in device_data:
-            attributes["has_mic"] = "Yes" if device_data["hasMic"] else "No"
-        if "hasCrown" in device_data:
-            attributes["has_crown"] = "Yes" if device_data["hasCrown"] else "No"
-        if "hasBuzzer" in device_data:
-            attributes["has_buzzer"] = "Yes" if device_data["hasBuzzer"] else "No"
-        if "hasSpeaker" in device_data:
-            attributes["has_speaker"] = "Yes" if device_data["hasSpeaker"] else "No"
-        
-        return attributes
+        """Return extra state attributes (hardware info)."""
+        device_data = self._get_section(self._SECTION)
+        return extract_attributes(device_data, _DEVICE_ATTR_MAPPING) if device_data else {}

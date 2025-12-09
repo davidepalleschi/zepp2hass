@@ -1,61 +1,59 @@
-"""Blood Oxygen sensors for Zepp2Hass."""
+"""Blood Oxygen sensor for Zepp2Hass.
+
+Provides SpO2 (blood oxygen saturation) readings from the device.
+Uses the most recent reading from the few_hours array.
+"""
 from __future__ import annotations
 
-import logging
+from typing import Any, TYPE_CHECKING
 
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.const import PERCENTAGE
 
-from ..const import DOMAIN
-from ..coordinator import ZeppDataUpdateCoordinator
+from .base import ZeppSensorBase
+from ..const import DataSection
 
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from ..coordinator import ZeppDataUpdateCoordinator
 
 
-class BloodOxygenSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity):
-    """Blood Oxygen sensor using last element from few_hours array."""
+class BloodOxygenSensor(ZeppSensorBase):
+    """Blood Oxygen sensor using latest reading from few_hours array.
+
+    Main value is the SpO2 percentage from the most recent reading.
+    Available only when there are valid readings in the data.
+    """
+
+    _SECTION = DataSection.BLOOD_OXYGEN
 
     def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
         """Initialize the blood oxygen sensor."""
-        super().__init__(coordinator)
-        
-        # Set entity attributes
-        self._attr_name = f"{coordinator.device_name} Blood Oxygen"
-        self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_blood_oxygen"
-        self._attr_icon = "mdi:water-percent"
-        self._attr_native_unit_of_measurement = PERCENTAGE
+        super().__init__(
+            coordinator=coordinator,
+            key="blood_oxygen",
+            name="Blood Oxygen",
+            icon="mdi:water-percent",
+            unit=PERCENTAGE,
+        )
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return self.coordinator.device_info
+    def _get_readings(self) -> list[dict[str, Any]]:
+        """Get blood oxygen readings list.
+
+        Returns:
+            List of reading dicts or empty list if not available
+        """
+        section = self._get_section(self._SECTION)
+        few_hours = section.get("few_hours")
+        if isinstance(few_hours, list) and few_hours:
+            return few_hours
+        return []
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        if not self.coordinator.last_update_success:
-            return False
-        data = self.coordinator.data
-        if not data:
-            return False
-        blood_oxygen_data = data.get("blood_oxygen", {})
-        few_hours = blood_oxygen_data.get("few_hours", [])
-        return bool(few_hours and isinstance(few_hours, list) and len(few_hours) > 0)
+        """Return True if entity is available (has valid readings)."""
+        return self._is_coordinator_ready() and bool(self._get_readings())
 
     @property
     def native_value(self) -> int | None:
-        """Return the state of the sensor (SpO2 value)."""
-        data = self.coordinator.data
-        if not data:
-            return None
-        
-        blood_oxygen_data = data.get("blood_oxygen", {})
-        few_hours = blood_oxygen_data.get("few_hours", [])
-        
-        if few_hours and isinstance(few_hours, list) and len(few_hours) > 0:
-            last_reading = few_hours[-1]
-            return last_reading.get("spo2")
-        
-        return None
+        """Return the SpO2 value from the most recent reading."""
+        readings = self._get_readings()
+        return readings[-1].get("spo2") if readings else None

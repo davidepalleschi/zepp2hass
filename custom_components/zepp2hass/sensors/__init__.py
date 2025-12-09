@@ -1,63 +1,80 @@
-"""Sensors module for Zepp2Hass."""
-from .base import Zepp2HassSensor, Zepp2HassSensorWithTarget
-from .device import DeviceInfoSensor
-from .user import UserInfoSensor
-from .workout import WorkoutHistorySensor, WorkoutStatusSensor, WorkoutLastSensor
+"""Sensors module for Zepp2Hass.
+
+This module exports all sensor classes and utilities for the integration.
+Organized into:
+- Base classes for creating sensors
+- Sensor definitions (declarative configuration)
+- Specialized sensor implementations
+- Formatters and mappings for data transformation
+"""
+from __future__ import annotations
+
+# Base classes
+from .base import (
+    ZeppSensorBase,
+    Zepp2HassSensor,
+    Zepp2HassSensorWithTarget,
+)
+
+# Sensor definitions (declarative configuration)
+from .definitions import (
+    SensorDef,
+    SensorWithTargetDef,
+    SENSOR_DEFINITIONS,
+    SENSORS_WITH_TARGET,
+)
+
+# Specialized sensor implementations
 from .blood_oxygen import BloodOxygenSensor
+from .device import DeviceInfoSensor
 from .pai import PAISensor
-from .definitions import SENSOR_DEFINITIONS, SENSORS_WITH_TARGET
+from .user import UserInfoSensor
+from .workout import (
+    WorkoutHistorySensor,
+    WorkoutLastSensor,
+    WorkoutStatusSensor,
+)
+
+# Formatters (commonly used by sensors and external code)
 from .formatters import (
-    get_nested_value,
-    format_gender,
-    #format_wearing_status,
-    #format_sleep_status,
-    format_sport_type,
-    format_bool,
-    format_float,
-    format_birth_date,
-    format_body_temp,
-    format_sleep_time,
-    apply_formatter,
     FORMATTER_MAP,
+    extract_attributes,
+    format_sensor_value,
+    format_sport_type,
+    format_yes_no,
+    get_nested_value,
 )
-from .mappings import (
-    #WEARING_STATUS_MAP,
-    GENDER_MAP,
-    #SLEEP_STATUS_MAP,
-    SPORT_TYPE_MAP,
-)
+
+# Mappings
+from .mappings import GENDER_MAP, SPORT_TYPE_MAP
+
 
 __all__ = [
-    # Sensor classes
+    # Base classes
+    "ZeppSensorBase",
     "Zepp2HassSensor",
     "Zepp2HassSensorWithTarget",
-    "DeviceInfoSensor",
-    "UserInfoSensor",
-    "WorkoutHistorySensor",
-    "WorkoutStatusSensor",
-    "WorkoutLastSensor",
-    "BloodOxygenSensor",
-    "PAISensor",
     # Definitions
+    "SensorDef",
+    "SensorWithTargetDef",
     "SENSOR_DEFINITIONS",
     "SENSORS_WITH_TARGET",
+    # Specialized sensors
+    "BloodOxygenSensor",
+    "DeviceInfoSensor",
+    "PAISensor",
+    "UserInfoSensor",
+    "WorkoutHistorySensor",
+    "WorkoutLastSensor",
+    "WorkoutStatusSensor",
     # Formatters
-    "get_nested_value",
-    "format_gender",
-    #"format_wearing_status",
-    #"format_sleep_status",
-    "format_sport_type",
-    "format_bool",
-    "format_float",
-    "format_birth_date",
-    "format_body_temp",
-    "format_sleep_time",
-    "apply_formatter",
     "FORMATTER_MAP",
+    "extract_attributes",
+    "format_sensor_value",
+    "format_sport_type",
+    "format_yes_no",
+    "get_nested_value",
     # Mappings
-    #"WEARING_STATUS_MAP",
     "GENDER_MAP",
-    #"SLEEP_STATUS_MAP",
     "SPORT_TYPE_MAP",
 ]
-

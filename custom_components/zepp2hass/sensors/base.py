@@ -1,166 +1,212 @@
-"""Base sensor classes for Zepp2Hass."""
+"""Base sensor classes for Zepp2Hass.
+
+This module provides the foundation for all Zepp sensors:
+- ZeppSensorBase: Abstract base with common functionality
+- Zepp2HassSensor: Simple JSON path-based sensor
+- Zepp2HassSensorWithTarget: Sensor with current value and target attribute
+"""
 from __future__ import annotations
 
-import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from ..const import DOMAIN
-from ..coordinator import ZeppDataUpdateCoordinator
-from .formatters import get_nested_value, FORMATTER_MAP
+from .definitions import SensorDef, SensorWithTargetDef
+from .formatters import get_nested_value, format_sensor_value
 
-_LOGGER = logging.getLogger(__name__)
-
-
-class Zepp2HassSensor(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity):
-    """Representation of a Zepp2Hass sensor using coordinator."""
-
-    def __init__(
-        self,
-        coordinator: ZeppDataUpdateCoordinator,
-        sensor_def: tuple[str, str, str, str | None, str | None, str | None, EntityCategory | None, SensorDeviceClass | None]
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        
-        self._json_path = sensor_def[0]  # JSON path (can be nested with dots)
-        self._formatter = sensor_def[5]  # formatter function name
-
-        # Set entity attributes (immutable after init)
-        self._attr_name = f"{coordinator.device_name} {sensor_def[2]}"
-        self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_{sensor_def[1]}"
-        self._attr_icon = sensor_def[4]
-        self._attr_native_unit_of_measurement = sensor_def[3]
-        self._attr_entity_category = sensor_def[6]
-        self._attr_device_class = sensor_def[7]
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return self.coordinator.device_info
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        if not self.coordinator.last_update_success:
-            return False
-        data = self.coordinator.data
-        if not data:
-            return False
-        _, found = get_nested_value(data, self._json_path)
-        return found
-
-    @property
-    def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        data = self.coordinator.data
-        if not data:
-            return None
-        
-        raw_val, found = get_nested_value(data, self._json_path)
-        if not found:
-            return None
-        
-        return self._format_value(raw_val)
-
-    def _format_value(self, value: Any) -> Any:
-        """Format sensor value for display."""
-        if value is None:
-            return None
-        
-        # Apply formatter function if specified
-        if self._formatter:
-            formatter_func = FORMATTER_MAP.get(self._formatter)
-            if formatter_func:
-                value = formatter_func(value)
-        
-        # Automatically format float values to 2 decimal places
-        if isinstance(value, float) and self._formatter != "format_body_temp":
-            value = round(value, 2)
-        
-        return value
+if TYPE_CHECKING:
+    from ..coordinator import ZeppDataUpdateCoordinator
 
 
-class Zepp2HassSensorWithTarget(CoordinatorEntity[ZeppDataUpdateCoordinator], SensorEntity):
-    """Representation of a Zepp2Hass sensor with a target value."""
+class ZeppSensorBase(CoordinatorEntity["ZeppDataUpdateCoordinator"], SensorEntity):
+    """Base class for all Zepp sensors.
+
+    Provides common functionality:
+    - Device info linking via coordinator
+    - Standard naming pattern: "{device_name} {sensor_name}"
+    - Unique ID generation: "{domain}_{entry_id}_{key}"
+    - Helper methods for accessing coordinator data
+    - Availability checking based on coordinator state
+
+    Subclasses should implement:
+    - available: Whether the sensor has valid data
+    - native_value: The sensor's current value
+
+    Optionally override:
+    - extra_state_attributes: Additional attributes to expose
+    """
 
     def __init__(
         self,
         coordinator: ZeppDataUpdateCoordinator,
-        sensor_def: tuple[str, str, str, str, str | None, str | None, str | None, SensorDeviceClass | None]
+        key: str,
+        name: str,
+        icon: str | None = None,
+        unit: str | None = None,
     ) -> None:
-        """Initialize the sensor with target."""
-        super().__init__(coordinator)
-        
-        self._current_path = sensor_def[0]  # JSON path for current value
-        self._target_path = sensor_def[1]  # JSON path for target value
-        self._formatter = sensor_def[6]  # formatter function name
+        """Initialize the base sensor.
 
-        # Set entity attributes (immutable after init)
-        self._attr_name = f"{coordinator.device_name} {sensor_def[3]}"
-        self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_{sensor_def[2]}"
-        self._attr_icon = sensor_def[5]
-        self._attr_native_unit_of_measurement = sensor_def[4]
-        self._attr_device_class = sensor_def[7]
+        Args:
+            coordinator: Data update coordinator for this device
+            key: Unique key for this sensor (used in entity_id)
+            name: Human-readable sensor name (appended to device name)
+            icon: MDI icon name (e.g., "mdi:heart-pulse")
+            unit: Unit of measurement (e.g., "bpm", "%")
+        """
+        super().__init__(coordinator)
+
+        self._attr_name = f"{coordinator.device_name} {name}"
+        self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_{key}"
+        self._attr_icon = icon
+        self._attr_native_unit_of_measurement = unit
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return device information."""
+        """Return device information for entity registry."""
         return self.coordinator.device_info
 
     @property
+    def _data(self) -> dict[str, Any] | None:
+        """Return coordinator data (convenience property)."""
+        return self.coordinator.data
+
+    def _is_coordinator_ready(self) -> bool:
+        """Check if coordinator has successful update and data available.
+
+        Returns:
+            True if coordinator has data and last update succeeded
+        """
+        return self.coordinator.last_update_success and bool(self._data)
+
+    def _get_value(self, path: str) -> tuple[Any, bool]:
+        """Get nested value from coordinator data using dot notation.
+
+        Args:
+            path: Dot-separated path (e.g., "workout.status.trainingLoad")
+
+        Returns:
+            Tuple of (value, found) where found is True if path exists
+        """
+        if not self._data:
+            return (None, False)
+        return get_nested_value(self._data, path)
+
+    def _get_section(self, section: str) -> dict[str, Any]:
+        """Get a top-level section from coordinator data.
+
+        Args:
+            section: Section key (e.g., "device", "user", "workout")
+
+        Returns:
+            The section dict or empty dict if not found
+        """
+        if not self._data:
+            return {}
+        return self._data.get(section, {})
+
+
+class Zepp2HassSensor(ZeppSensorBase):
+    """Generic sensor that reads a value from a JSON path.
+
+    Uses SensorDef for declarative configuration including:
+    - JSON path for value extraction
+    - Optional formatter for value transformation
+    - Device class and entity category
+    """
+
+    def __init__(
+        self,
+        coordinator: ZeppDataUpdateCoordinator,
+        sensor_def: SensorDef,
+    ) -> None:
+        """Initialize the sensor from definition.
+
+        Args:
+            coordinator: Data update coordinator
+            sensor_def: Declarative sensor definition
+        """
+        super().__init__(
+            coordinator=coordinator,
+            key=sensor_def.key,
+            name=sensor_def.name,
+            icon=sensor_def.icon,
+            unit=sensor_def.unit,
+        )
+        self._json_path = sensor_def.json_path
+        self._formatter = sensor_def.formatter
+        self._attr_entity_category = sensor_def.category
+        self._attr_device_class = sensor_def.device_class
+
+    @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        if not self.coordinator.last_update_success:
+        """Return True if entity is available (coordinator ready and path exists)."""
+        if not self._is_coordinator_ready():
             return False
-        data = self.coordinator.data
-        if not data:
-            return False
-        _, found = get_nested_value(data, self._current_path)
+        _, found = self._get_value(self._json_path)
         return found
 
     @property
     def native_value(self) -> Any:
-        """Return the state of the sensor."""
-        data = self.coordinator.data
-        if not data:
-            return None
-        
-        current_val, found = get_nested_value(data, self._current_path)
+        """Return the formatted sensor value."""
+        raw_val, found = self._get_value(self._json_path)
         if not found:
             return None
-        
-        return self._format_value(current_val)
+        return format_sensor_value(raw_val, self._formatter)
+
+
+class Zepp2HassSensorWithTarget(ZeppSensorBase):
+    """Sensor with current value and target/goal as attribute.
+
+    Used for metrics like steps, calories where there's a daily target.
+    Exposes 'target' in extra_state_attributes.
+    """
+
+    def __init__(
+        self,
+        coordinator: ZeppDataUpdateCoordinator,
+        sensor_def: SensorWithTargetDef,
+    ) -> None:
+        """Initialize the sensor with target from definition.
+
+        Args:
+            coordinator: Data update coordinator
+            sensor_def: Declarative sensor definition with target path
+        """
+        super().__init__(
+            coordinator=coordinator,
+            key=sensor_def.key,
+            name=sensor_def.name,
+            icon=sensor_def.icon,
+            unit=sensor_def.unit,
+        )
+        self._current_path = sensor_def.current_path
+        self._target_path = sensor_def.target_path
+        self._formatter = sensor_def.formatter
+        self._attr_device_class = sensor_def.device_class
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available (coordinator ready and current path exists)."""
+        if not self._is_coordinator_ready():
+            return False
+        _, found = self._get_value(self._current_path)
+        return found
+
+    @property
+    def native_value(self) -> Any:
+        """Return the formatted current value."""
+        current_val, found = self._get_value(self._current_path)
+        if not found:
+            return None
+        return format_sensor_value(current_val, self._formatter)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra state attributes."""
-        data = self.coordinator.data
-        if not data:
-            return {}
-        
-        target_val, found = get_nested_value(data, self._target_path)
+        """Return extra state attributes including target value."""
+        target_val, found = self._get_value(self._target_path)
         if not found or target_val is None:
             return {}
-        
-        return {"target": self._format_value(target_val)}
-
-    def _format_value(self, value: Any) -> Any:
-        """Format sensor value for display."""
-        if value is None:
-            return None
-        
-        # Apply formatter function if specified
-        if self._formatter:
-            formatter_func = FORMATTER_MAP.get(self._formatter)
-            if formatter_func:
-                value = formatter_func(value)
-        
-        # Automatically format float values to 2 decimal places
-        if isinstance(value, float):
-            value = round(value, 2)
-        
-        return value
+        return {"target": format_sensor_value(target_val, self._formatter)}

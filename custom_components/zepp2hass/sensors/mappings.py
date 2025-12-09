@@ -1,29 +1,12 @@
 """Constant mappings for Zepp2Hass sensors."""
 
-# Wearing status mapping
-# WEARING_STATUS_MAP = {
-#     0: "Not Wearing",
-#     1: "Wearing",
-#     2: "In Motion",
-#     3: "Not Sure",
-# }
-
-# Gender mapping
-GENDER_MAP = {
+GENDER_MAP: dict[int, str] = {
     0: "Male",
     1: "Female",
     2: "Other",
 }
 
-# Sleep status mapping
-# SLEEP_STATUS_MAP = {
-#     0: "Awake",
-#     1: "Sleeping",
-#     2: "Not Sure",
-# }
-
-# Sport type mapping (subType values)
-SPORT_TYPE_MAP = {
+SPORT_TYPE_MAP: dict[int, str] = {
     1: "Outdoor Running",
     2: "Treadmill",
     3: "Walking",
@@ -206,6 +189,5 @@ SPORT_TYPE_MAP = {
     201: "Surfing",
     202: "Kitesurfing",
     203: "Ultra Marathon",
-    221: "Recreatinal diving"
+    221: "Recreational diving",
 }
-
