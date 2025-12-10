@@ -51,7 +51,7 @@ The integration creates multiple sensor types organized by category:
 
 ## 🚀 Installation
 
-### Option 1: HACS (Recommended) ⭐
+### HACS ⭐
 
 1. Open **HACS** in Home Assistant
 2. Go to **Integrations**
@@ -64,16 +64,6 @@ The integration creates multiple sensor types organized by category:
 7. Search for **Zepp2Hass** in HACS
 8. Click **Download**
 9. Restart Home Assistant
-
-### Option 2: Manual Installation
-
-1. Download the latest release from the [Releases](https://github.com/davidepalleschi/zepp2hass/releases) page
-2. Extract the `zepp2hass` folder
-3. Copy it to your `custom_components` directory:
-   ```
-   config/custom_components/zepp2hass/
-   ```
-4. Restart Home Assistant
 
 ---
 
@@ -126,9 +116,7 @@ The webhook URL doubles as a web dashboard! Open it in your browser to access:
 
 ## 🎯 Usage Examples
 
-### Automations
-
-**Notify when battery is low:**
+**Battery low automation:**
 ```yaml
 automation:
   - alias: "Zepp Battery Low"
@@ -142,128 +130,15 @@ automation:
           message: "🔋 Watch battery low: {{ states('sensor.my_zepp_watch_battery') }}%"
 ```
 
-**Track daily steps goal:**
-```yaml
-automation:
-  - alias: "Daily Steps Goal Reached"
-    trigger:
-      - platform: template
-        value_template: >
-          {{ states('sensor.my_zepp_watch_steps') | int >= 
-             state_attr('sensor.my_zepp_watch_steps', 'target') | int }}
-    action:
-      - service: notify.mobile_app_your_phone
-        data:
-          message: "🎉 You've reached your step goal!"
-```
-
-**Alert on poor sleep:**
-```yaml
-automation:
-  - alias: "Poor Sleep Alert"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.my_zepp_watch_sleep_score
-        below: 70
-    action:
-      - service: notify.mobile_app_your_phone
-        data:
-          message: >
-            😴 Sleep score: {{ states('sensor.my_zepp_watch_sleep_score') }} points.
-            Consider improving your sleep routine.
-```
-
-**Detect when watch is removed:**
-```yaml
-automation:
-  - alias: "Watch Removed Alert"
-    trigger:
-      - platform: state
-        entity_id: binary_sensor.my_zepp_watch_is_wearing_binary
-        to: "off"
-    action:
-      - service: notify.mobile_app_your_phone
-        data:
-          message: "⌚ Your Zepp watch has been removed"
-```
-
-**Track workout completion:**
-```yaml
-automation:
-  - alias: "Workout Completed"
-    trigger:
-      - platform: state
-        entity_id: sensor.my_zepp_watch_last_workout
-    action:
-      - service: notify.mobile_app_your_phone
-        data:
-          message: >
-            🏃 Workout completed: {{ states('sensor.my_zepp_watch_last_workout') }}
-            Duration: {{ state_attr('sensor.my_zepp_watch_last_workout', 'duration_minutes') }} min
-```
-
-### Lovelace Dashboard Cards
-
-**Health Overview Card:**
+**Lovelace health card:**
 ```yaml
 type: entities
 title: 🏃 Zepp Health
 entities:
   - entity: sensor.my_zepp_watch_steps
-    name: Steps
-    secondary_info: attribute
-    attribute: target
   - entity: sensor.my_zepp_watch_heart_rate_last
-    name: Heart Rate
   - entity: sensor.my_zepp_watch_calories
-    name: Calories
   - entity: sensor.my_zepp_watch_battery
-    name: Battery
-```
-
-**Heart Rate Gauge:**
-```yaml
-type: gauge
-entity: sensor.my_zepp_watch_heart_rate_last
-name: ❤️ Heart Rate
-min: 40
-max: 180
-segments:
-  - from: 40
-    color: "#43A047"
-  - from: 100
-    color: "#FFA726"
-  - from: 140
-    color: "#E53935"
-```
-
-**Sleep Stats:**
-```yaml
-type: statistics-graph
-title: 😴 Sleep Score
-entities:
-  - sensor.my_zepp_watch_sleep_score
-days_to_show: 7
-stat_types:
-  - mean
-  - min
-  - max
-```
-
-**PAI Progress:**
-```yaml
-type: gauge
-entity: sensor.my_zepp_watch_pai
-name: 🏅 Weekly PAI
-min: 0
-max: 200
-segments:
-  - from: 0
-    color: "#E53935"
-  - from: 50
-    color: "#FFA726"
-  - from: 100
-    color: "#43A047"
 ```
 
 ---
@@ -295,54 +170,6 @@ Expected response:
 ```json
 {"status": "ok"}
 ```
-
-### Integration not appearing?
-
-1. **Clear browser cache** - Hard refresh (Ctrl+F5 or Cmd+Shift+R)
-2. **Verify file structure** - Ensure all files are in `custom_components/zepp2hass/`
-3. **Restart Home Assistant** - Full restart, not just reload
-4. **Check dependencies** - The integration requires the `http` component
-
-### Webhook returns 400 error?
-
-- Ensure payload is valid JSON
-- Payload must be a JSON object (not array)
-- Check for syntax errors in the JSON
-
-### Webhook returns 429 error?
-
-- Rate limit exceeded (max 30 requests per 60 seconds)
-- Wait for the rate limit window to reset
-
----
-
-## 📝 Status Mappings
-
-### `is_wearing` Values
-
-| Value | Description | Binary Sensors |
-|-------|-------------|----------------|
-| 0 | Not Wearing | `is_wearing`: OFF, `is_moving`: OFF |
-| 1 | Wearing | `is_wearing`: ON, `is_moving`: OFF |
-| 2 | In Motion | `is_wearing`: ON, `is_moving`: ON |
-| 3 | Not Sure | `is_wearing`: OFF, `is_moving`: OFF |
-
-### `sleep.status` Values
-
-| Value | Description | Binary Sensor |
-|-------|-------------|---------------|
-| 0 | Awake | `is_sleeping`: OFF |
-| 1 | Sleeping | `is_sleeping`: ON |
-| 2 | Not Sure | `is_sleeping`: OFF |
-
-### `user.gender` Values
-
-| Value | Description |
-|-------|-------------|
-| 0 | Male |
-| 1 | Female |
-| 2 | Other |
-
 ---
 
 ## 🤝 Contributing
