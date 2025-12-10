@@ -345,38 +345,25 @@ class ZeppWebhookView(ZeppViewBase):
         self.url = webhook_path
         self.name = f"api:zepp2hass:{entry_id}"
 
-    def _render_dashboard(self, webhook_url: str, payload: dict[str, Any] | None) -> str:
-        """Render the dashboard HTML with current data.
+    def _render_dashboard(self, webhook_url: str) -> str:
+        """Render the dashboard HTML.
 
         Args:
             webhook_url: Full webhook URL for display
-            payload: Current data payload or None
 
         Returns:
             Rendered HTML string
         """
         template = Template(_template_cache.load("dashboard.html", convert_syntax=True))
-        has_data = payload is not None
-
-        # Determine JSON container content
-        if has_data:
-            json_container = '<div class="json-viewer" id="jsonViewer"></div>'
-        else:
-            json_container = _template_cache.load("partials/no_data.html")
 
         return template.safe_substitute(
             STATIC_URL=self.static_url,
             WEBHOOK_PATH=self.webhook_path,
             WEBHOOK_URL=webhook_url,
-            STATUS_CLASS="success" if has_data else "warning",
-            STATUS_TEXT="Data received" if has_data else "No data",
-            CONTROLS_DISPLAY="display: flex;" if has_data else "display: none;",
-            JSON_CONTAINER=json_container,
-            JSON_DATA=json.dumps(payload, ensure_ascii=False) if payload else "null",
         )
 
     async def get(self, request: web.Request) -> web.Response:
-        """Display dashboard with latest JSON payload.
+        """Display dashboard with webhook URL.
 
         Args:
             request: HTTP request
@@ -385,12 +372,9 @@ class ZeppWebhookView(ZeppViewBase):
             Rendered dashboard HTML
         """
         entry_data = self._get_entry_data() or {}
-        coordinator: ZeppDataUpdateCoordinator | None = entry_data.get("coordinator")
-
-        payload = coordinator.data if coordinator else None
         webhook_url = entry_data.get("webhook_full_url", "")
 
-        return self._html_response(self._render_dashboard(webhook_url, payload))
+        return self._html_response(self._render_dashboard(webhook_url))
 
     async def post(self, request: web.Request) -> web.Response:
         """Receive and process webhook data from Zepp device.

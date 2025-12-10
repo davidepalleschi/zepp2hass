@@ -31,8 +31,6 @@ Zepp2Hass receives data from your Zepp smartwatch via a local webhook endpoint. 
 Each webhook comes with a **beautiful web dashboard** accessible via browser! Simply visit your webhook URL in a browser to:
 
 - **View the webhook URL** with one-click copy
-- **See the latest JSON payload** with syntax highlighting
-- **Expand/collapse** nested data
 - **Check error logs** at `/log` endpoint
 
 ### 📊 Comprehensive Sensor Suite
@@ -108,75 +106,6 @@ http://192.168.1.100:8123/api/zepp2hass/my_zepp_watch
 
 > **Note:** The device name is automatically converted to a URL-friendly format (lowercase, spaces replaced with underscores).
 
-### Step 3: Configure Data Source
-
-Send POST requests with JSON payloads to your webhook URL. The integration expects the following structure:
-
-```json
-{
-  "record_time": "2024-01-15T10:30:00",
-  "battery": { "current": 85 },
-  "heart_rate": {
-    "last": 72,
-    "resting": 58,
-    "summary": { "maximum": { "hr_value": 145 } }
-  },
-  "steps": { "current": 8500, "target": 10000 },
-  "calorie": { "current": 450, "target": 600 },
-  "fat_burning": { "current": 30, "target": 45 },
-  "stands": { "current": 8, "target": 12 },
-  "distance": { "current": 6200 },
-  "sleep": {
-    "status": 0,
-    "info": {
-      "score": 85,
-      "totalTime": 420,
-      "deepTime": 90,
-      "startTime": "2024-01-14T23:30:00",
-      "endTime": "2024-01-15T06:30:00"
-    }
-  },
-  "blood_oxygen": {
-    "few_hours": [
-      { "spo2": 98, "time": "2024-01-15T10:00:00" }
-    ]
-  },
-  "stress": { "current": { "value": 25 } },
-  "body_temperature": { "current": { "value": 36.5 } },
-  "is_wearing": 1,
-  "pai": { "day": 45, "week": 280 },
-  "screen": { "status": 1, "aod_mode": true, "light": 80 },
-  "workout": {
-    "status": {
-      "trainingLoad": 150,
-      "vo2Max": 45,
-      "fullRecoveryTime": 24
-    },
-    "history": [
-      {
-        "sportType": 1,
-        "startTime": "2024-01-15T08:00:00",
-        "duration": 1800
-      }
-    ]
-  },
-  "device": {
-    "deviceName": "Amazfit GTR 4",
-    "width": 466,
-    "height": 466,
-    "hasNFC": true,
-    "hasMic": true
-  },
-  "user": {
-    "nickName": "John",
-    "age": 30,
-    "gender": 0,
-    "height": 180,
-    "weight": 75
-  }
-}
-```
-
 ## 🌐 Web Dashboard
 
 The webhook URL doubles as a web dashboard! Open it in your browser to access:
@@ -184,8 +113,6 @@ The webhook URL doubles as a web dashboard! Open it in your browser to access:
 ### Main Dashboard (`/api/zepp2hass/your_device`)
 
 - 📋 **Webhook URL** - Copy with one click
-- 📊 **Latest Payload** - Interactive JSON viewer with expand/collapse
-- 🔄 **Status Indicator** - Shows if data has been received
 
 ### Error Log (`/api/zepp2hass/your_device/log`)
 
