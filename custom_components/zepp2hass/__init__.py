@@ -8,11 +8,13 @@ from __future__ import annotations
 from collections import deque
 import json
 import logging
+from pathlib import Path
 import time
 from typing import Any
 
 from aiohttp import web
 
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.webhook import (
     async_generate_id as webhook_generate_id,
     async_register as webhook_register,
@@ -34,6 +36,26 @@ from .const import (
 from .coordinator import ZeppDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Cache for dashboard HTML template
+_DASHBOARD_TEMPLATE: str | None = None
+
+
+def _load_dashboard_template() -> str:
+    """Load dashboard HTML template, with caching.
+    
+    Returns:
+        Dashboard HTML template content
+    """
+    global _DASHBOARD_TEMPLATE
+    if _DASHBOARD_TEMPLATE is None:
+        dashboard_path = Path(__file__).parent / "frontend" / "dashboard.html"
+        try:
+            _DASHBOARD_TEMPLATE = dashboard_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            _LOGGER.error("Dashboard template not found at %s", dashboard_path)
+            _DASHBOARD_TEMPLATE = "<html><body><h1>Webhook URL</h1><p>{{WEBHOOK_URL}}</p></body></html>"
+    return _DASHBOARD_TEMPLATE
 
 
 class RateLimiter:
@@ -133,8 +155,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         f"Zepp2Hass {device_name}",
         webhook_id,
         _create_webhook_handler(hass, entry_id),
-        allowed_methods=["POST"],
+        allowed_methods=["GET", "POST"],
     )
+
+    # Register static path for frontend assets (CSS, etc.)
+    # Only register once per domain (check if already registered)
+    if "_static_registered" not in hass.data[DOMAIN]:
+        frontend_path = Path(__file__).parent / "frontend"
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(f"/api/{DOMAIN}/static", str(frontend_path), False),
+        ])
+        hass.data[DOMAIN]["_static_registered"] = True
 
     # Register device
     device_registry = dr.async_get(hass)
@@ -175,12 +206,29 @@ def _create_webhook_handler(hass: HomeAssistant, entry_id: str):
             request: The HTTP request
 
         Returns:
-            JSON response indicating success or error
+            JSON response indicating success or error, or HTML for GET requests
         """
         entry_data = hass.data.get(DOMAIN, {}).get(entry_id)
         if not entry_data:
             return web.json_response({"error": "Entry not found"}, status=404)
 
+        # Handle GET requests - serve dashboard for copying webhook URL
+        if request.method == "GET":
+            webhook_url = entry_data["webhook_full_url"]
+            webhook_path = entry_data["webhook_path"]
+            static_url = f"/api/{DOMAIN}/static"
+            
+            # Load and process dashboard HTML template
+            dashboard_html = _load_dashboard_template()
+            
+            # Replace template variables
+            dashboard_html = dashboard_html.replace("{{WEBHOOK_URL}}", webhook_url)
+            dashboard_html = dashboard_html.replace("{{WEBHOOK_PATH}}", webhook_path)
+            dashboard_html = dashboard_html.replace("{{STATIC_URL}}", static_url)
+            
+            return web.Response(text=dashboard_html, content_type="text/html")
+
+        # Handle POST requests - process webhook payload
         # Rate limiting check
         rate_limiter: RateLimiter = entry_data["rate_limiter"]
         if not rate_limiter.is_allowed():

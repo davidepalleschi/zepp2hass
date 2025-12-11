@@ -69,7 +69,7 @@ async def async_setup_entry(
         BloodOxygenSensor(coordinator),
         PAISensor(coordinator),
         # Diagnostic sensor for webhook URL
-        WebhookUrlSensor(hass, entry.entry_id, device_name, webhook_url),
+        # WebhookUrlSensor(hass, entry.entry_id, device_name, webhook_url),
     ]
 
     async_add_entities(sensors)
