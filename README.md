@@ -26,12 +26,11 @@ Zepp2Hass receives data from your Zepp smartwatch via a local webhook endpoint. 
 
 **Rate limiting** is built-in to protect your Home Assistant instance: max 30 requests per 60 seconds per device.
 
-### 🌐 Built-in Web Dashboard
+### 🌐 Web Interface for Easy URL Copying
 
-Each webhook comes with a **beautiful web dashboard** accessible via browser! Simply visit your webhook URL in a browser to:
+Each webhook comes with a **simple web interface** accessible via browser. The interface is designed **only** to make it easy to copy your webhook URL:
 
-- **View the webhook URL** with one-click copy
-- **Check error logs** at `/log` endpoint
+- **View the webhook URL** with one-click copy button
 
 ### 📊 Comprehensive Sensor Suite
 
@@ -79,38 +78,43 @@ The integration creates multiple sensor types organized by category:
 
 ### Step 2: Get Your Webhook URL
 
-After adding the integration, you'll find the webhook URL in:
+After adding the integration, you can get your webhook URL in two ways:
 
-- **Home Assistant Logs** (Settings → System → Logs)
-- **The Web Dashboard** (visit the webhook URL in your browser)
+1. **Home Assistant Logs** (Settings → System → Logs) - Look for the log entry showing the registered webhook URL
+2. **Web Interface** - Visit the webhook URL in your browser to see a simple page with a one-click copy button
 
 The URL format is:
 ```
-http://YOUR_HOME_ASSISTANT_IP:8123/api/zepp2hass/YOUR_DEVICE_NAME
+http://YOUR_HOME_ASSISTANT_IP:8123/api/webhook/WEBHOOK_ID
 ```
 
-Example for a device named "My Zepp Watch":
-```
-http://192.168.1.100:8123/api/zepp2hass/my_zepp_watch
-```
+> **Note:** The webhook URL uses a secure, randomly generated ID (not your device name).
 
-> **Note:** The device name is automatically converted to a URL-friendly format (lowercase, spaces replaced with underscores).
+### Step 3: Install and Configure the Zepp2Hass App on Your Watch
 
-## 🌐 Web Dashboard
+To send data from your Zepp smartwatch to Home Assistant, you need to install the **zepp2hass** app on your watch and configure it:
 
-The webhook URL doubles as a web dashboard! Open it in your browser to access:
+> **Prerequisites:** You need the **Zepp** app installed on your smartphone.
 
-### Main Dashboard (`/api/zepp2hass/your_device`)
+1. **Install the App from Zepp Store**
+   - Open the **Zepp** app on your smartphone
+   - Navigate to the **Zepp Store** (internal app store within the Zepp app)
+   - Search for **"zepp2hass"** and install it on your smartwatch
 
-- 📋 **Webhook URL** - Copy with one click
+2. **Configure the Webhook**
+   - In the **Zepp** app, go to **Device Application Settings** → **More**
+   - Find the **zepp2hass** app in the list
+   - Enter the webhook URL you copied from Step 2
+   - Optionally, adjust the **update interval** (default: 1 minute)
+     - Increasing the interval (e.g., 2-5 minutes) will save battery life
+     - Decreasing the interval provides more frequent updates but may drain battery faster
 
-### Error Log (`/api/zepp2hass/your_device/log`)
+3. **Apply Settings on Your Watch**
+   - Open the **zepp2hass** app directly on your smartwatch
+   - Click the **"Apply settings"** button at the bottom
+   - The app will now start sending data to Home Assistant
 
-- 📋 **Error History** - View logged errors from payloads
-- ⏰ **Timestamps** - See when each error occurred
-- 🔍 **Error Details** - Full error message display
-
-> Errors are captured from the `last_error` field in payloads and stored (up to 100 entries).
+> **Tip:** For most use cases, a 1-2 minute interval provides a good balance between data freshness and battery life.
 
 ---
 
@@ -156,7 +160,7 @@ entities:
 ### Test the webhook with curl
 
 ```bash
-curl -X POST http://YOUR_HA_IP:8123/api/zepp2hass/YOUR_DEVICE_NAME \
+curl -X POST http://YOUR_HA_IP:8123/api/webhook/YOUR_WEBHOOK_ID \
   -H "Content-Type: application/json" \
   -d '{
     "battery": {"current": 80},
@@ -165,6 +169,8 @@ curl -X POST http://YOUR_HA_IP:8123/api/zepp2hass/YOUR_DEVICE_NAME \
     "is_wearing": 1
   }'
 ```
+
+> **Note:** Replace `YOUR_WEBHOOK_ID` with the actual webhook ID from your integration. You can find it by visiting the webhook URL in your browser (GET request) or checking Home Assistant logs.
 
 Expected response:
 ```json
