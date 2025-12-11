@@ -63,7 +63,7 @@ class ZeppDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Shared DeviceInfo (created once, used by all entities)
         self._device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry_id)},
+            identifiers={(DOMAIN, self.entry_id)},
             manufacturer=DEFAULT_MANUFACTURER,
             model=DEFAULT_MODEL,
             name=device_name,
