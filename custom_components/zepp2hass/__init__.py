@@ -16,7 +16,7 @@ from typing import Any, Final
 
 from aiohttp import web
 
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -198,9 +198,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     # Register HTTP views
-    hass.http.register_view(ZeppWebhookView(hass, entry_id, webhook_url, static_url))
+    # Dashboard and Log views require authentication
+    hass.http.register_view(ZeppDashboardView(hass, entry_id, webhook_url, static_url))
     hass.http.register_view(ZeppLogView(hass, entry_id, webhook_url, static_url, log_url))
-    hass.http.register_view(ZeppStaticView(entry_id, static_url))
+    # Webhook view is public to receive data from Zepp devices
+    hass.http.register_view(ZeppWebhookView(hass, entry_id, webhook_url, static_url))
+
+    # Register static files securely using Home Assistant's recommended method
+    await hass.http.async_register_static_paths([
+        StaticPathConfig(static_url, str(_FRONTEND_DIR), False)
+    ])
 
     # Register device
     device_registry = dr.async_get(hass)
@@ -239,43 +246,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 # --- HTTP Views ---
-
-
-class ZeppStaticView(HomeAssistantView):
-    """Serve static assets (CSS) for the dashboard."""
-
-    requires_auth = False
-
-    # Allowed static files with content types (whitelist for security)
-    _STATIC_FILES: Final[dict[str, str]] = {
-        "style.css": "text/css",
-    }
-
-    def __init__(self, entry_id: str, static_url: str) -> None:
-        """Initialize static view.
-
-        Args:
-            entry_id: Config entry ID
-            static_url: Base URL for static assets
-        """
-        self.url = f"{static_url}/{{filename}}"
-        self.name = f"api:zepp2hass:static:{entry_id}"
-
-    async def get(self, request: web.Request, filename: str) -> web.Response:
-        """Serve whitelisted static files.
-
-        Args:
-            request: HTTP request
-            filename: Requested filename
-
-        Returns:
-            File content or 404 response
-        """
-        content_type = self._STATIC_FILES.get(filename)
-        if content_type:
-            content = _template_cache.load(filename)
-            return web.Response(text=content, content_type=content_type)
-        return web.Response(status=404, text="Not found")
 
 
 class ZeppViewBase(HomeAssistantView):
@@ -326,12 +296,10 @@ class ZeppViewBase(HomeAssistantView):
         return web.Response(text=content, content_type="text/html")
 
 
-class ZeppWebhookView(ZeppViewBase):
-    """Handle webhook requests from Zepp devices.
+class ZeppDashboardView(ZeppViewBase):
+    """Display dashboard for Zepp devices (requires authentication)."""
 
-    GET: Display dashboard with latest payload
-    POST: Receive new data from Zepp device
-    """
+    requires_auth = True
 
     def __init__(
         self,
@@ -340,10 +308,10 @@ class ZeppWebhookView(ZeppViewBase):
         webhook_path: str,
         static_url: str,
     ) -> None:
-        """Initialize the webhook view."""
+        """Initialize the dashboard view."""
         super().__init__(hass, entry_id, webhook_path, static_url)
         self.url = webhook_path
-        self.name = f"api:zepp2hass:{entry_id}"
+        self.name = f"api:zepp2hass:dashboard:{entry_id}"
 
     def _render_dashboard(self, webhook_url: str) -> str:
         """Render the dashboard HTML.
@@ -375,6 +343,24 @@ class ZeppWebhookView(ZeppViewBase):
         webhook_url = entry_data.get("webhook_full_url", "")
 
         return self._html_response(self._render_dashboard(webhook_url))
+
+
+class ZeppWebhookView(ZeppViewBase):
+    """Handle webhook POST requests from Zepp devices (public endpoint)."""
+
+    requires_auth = False
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry_id: str,
+        webhook_path: str,
+        static_url: str,
+    ) -> None:
+        """Initialize the webhook view."""
+        super().__init__(hass, entry_id, webhook_path, static_url)
+        self.url = webhook_path
+        self.name = f"api:zepp2hass:webhook:{entry_id}"
 
     async def post(self, request: web.Request) -> web.Response:
         """Receive and process webhook data from Zepp device.
@@ -449,6 +435,8 @@ class ZeppWebhookView(ZeppViewBase):
 
 class ZeppLogView(ZeppViewBase):
     """Display error log history for Zepp devices."""
+
+    requires_auth = True
 
     def __init__(
         self,
