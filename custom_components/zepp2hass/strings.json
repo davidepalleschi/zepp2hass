@@ -3,10 +3,14 @@
     "step": {
       "user": {
         "title": "Add Zepp2Hass device",
+        "description": "Enter a name for your Zepp device. This will be used to generate the webhook URL.",
         "data": {
           "name": "Device name"
         }
       }
+    },
+    "abort": {
+      "already_configured": "A device with this name is already configured"
     }
   }
 }

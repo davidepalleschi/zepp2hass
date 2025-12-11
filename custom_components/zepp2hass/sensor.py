@@ -24,6 +24,7 @@ from .sensors import (
     WorkoutLastSensor,
     BloodOxygenSensor,
     PAISensor,
+    WebhookUrlSensor,
     SENSOR_DEFINITIONS,
     SENSORS_WITH_TARGET,
 )
@@ -48,7 +49,10 @@ async def async_setup_entry(
         entry: Config entry being set up
         async_add_entities: Callback to register entities
     """
-    coordinator: ZeppDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    entry_data = hass.data[DOMAIN][entry.entry_id]
+    coordinator: ZeppDataUpdateCoordinator = entry_data["coordinator"]
+    webhook_url: str = entry_data["webhook_full_url"]
+    device_name: str = entry.data.get("name", "zepp_device")
 
     # Build sensor list: definition-based + specialized sensors
     sensors = [
@@ -64,6 +68,8 @@ async def async_setup_entry(
         WorkoutStatusSensor(coordinator),
         BloodOxygenSensor(coordinator),
         PAISensor(coordinator),
+        # Diagnostic sensor for webhook URL
+        WebhookUrlSensor(hass, entry.entry_id, device_name, webhook_url),
     ]
 
     async_add_entities(sensors)

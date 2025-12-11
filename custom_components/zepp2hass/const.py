@@ -4,19 +4,9 @@ from typing import Final
 # Integration domain (must match manifest.json)
 DOMAIN: Final[str] = "zepp2hass"
 
-# Base path for webhook URLs
-WEBHOOK_BASE: Final[str] = "/api/zepp2hass"
-
 # Rate limiting configuration
 RATE_LIMIT_REQUESTS: Final[int] = 30
 RATE_LIMIT_WINDOW_SECONDS: Final[int] = 60
-
-# Error log configuration
-MAX_ERROR_LOGS: Final[int] = 100
-
-# Template syntax markers
-TEMPLATE_VAR_OPEN: Final[str] = "{{"
-TEMPLATE_VAR_CLOSE: Final[str] = "}}"
 
 # Sensor platforms supported by this integration
 PLATFORMS: Final[tuple[str, ...]] = ("sensor", "binary_sensor")

@@ -29,6 +29,7 @@ from .blood_oxygen import BloodOxygenSensor
 from .device import DeviceInfoSensor
 from .pai import PAISensor
 from .user import UserInfoSensor
+from .webhook import WebhookUrlSensor
 from .workout import (
     WorkoutHistorySensor,
     WorkoutLastSensor,
@@ -64,6 +65,7 @@ __all__ = [
     "DeviceInfoSensor",
     "PAISensor",
     "UserInfoSensor",
+    "WebhookUrlSensor",
     "WorkoutHistorySensor",
     "WorkoutLastSensor",
     "WorkoutStatusSensor",

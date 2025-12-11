@@ -9,13 +9,16 @@ This module provides the central data coordinator that:
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN, DEFAULT_MANUFACTURER, DEFAULT_MODEL
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,21 +37,28 @@ class ZeppDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         device_name: Human-readable device name
     """
 
-    def __init__(self, hass: HomeAssistant, entry_id: str, device_name: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config_entry: ConfigEntry,
+        device_name: str,
+    ) -> None:
         """Initialize the coordinator.
 
         Args:
             hass: Home Assistant instance
-            entry_id: Config entry ID for this device
+            config_entry: Config entry for this device
             device_name: Human-readable device name
         """
         super().__init__(
             hass,
             _LOGGER,
-            name=f"{DOMAIN}_{entry_id}",
+            name=f"{DOMAIN}_{config_entry.entry_id}",
+            config_entry=config_entry,  # Link to config entry (best practice)
             update_interval=None,  # No polling - data pushed via webhook
+            always_update=False,  # Only notify listeners if data actually changed
         )
-        self.entry_id = entry_id
+        self.entry_id = config_entry.entry_id
         self.device_name = device_name
 
         # Shared DeviceInfo (created once, used by all entities)

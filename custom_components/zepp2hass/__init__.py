@@ -9,36 +9,31 @@ from collections import deque
 import json
 import logging
 import time
-from datetime import datetime
-from pathlib import Path
-from string import Template
-from typing import Any, Final
+from typing import Any
 
 from aiohttp import web
 
-from homeassistant.components.http import HomeAssistantView, StaticPathConfig
+from homeassistant.components.webhook import (
+    async_generate_id as webhook_generate_id,
+    async_register as webhook_register,
+    async_unregister as webhook_unregister,
+)
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_WEBHOOK_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
     DOMAIN,
-    WEBHOOK_BASE,
     PLATFORMS,
     RATE_LIMIT_REQUESTS,
     RATE_LIMIT_WINDOW_SECONDS,
-    MAX_ERROR_LOGS,
     DEFAULT_MANUFACTURER,
     DEFAULT_MODEL,
-    TEMPLATE_VAR_OPEN,
-    TEMPLATE_VAR_CLOSE,
 )
 from .coordinator import ZeppDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-# --- Frontend paths ---
-_FRONTEND_DIR: Final[Path] = Path(__file__).parent / "frontend"
 
 
 class RateLimiter:
@@ -81,87 +76,13 @@ class RateLimiter:
         return True
 
 
-# --- Template utilities ---
-
-
-class TemplateCache:
-    """Cache for frontend templates with lazy loading."""
-
-    __slots__ = ("_cache", "_frontend_dir")
-
-    def __init__(self, frontend_dir: Path) -> None:
-        """Initialize template cache."""
-        self._cache: dict[str, str] = {}
-        self._frontend_dir = frontend_dir
-
-    def load(self, name: str, convert_syntax: bool = False) -> str:
-        """Load and cache a template file from the frontend directory.
-
-        Args:
-            name: Template path relative to frontend/ (e.g., "dashboard.html")
-            convert_syntax: Convert {{VAR}} to ${VAR} for string.Template
-
-        Returns:
-            Template content, or empty string if not found
-        """
-        cache_key = f"{name}:{convert_syntax}"
-
-        if cache_key not in self._cache:
-            template_path = self._frontend_dir / name
-            try:
-                content = template_path.read_text(encoding="utf-8")
-                if convert_syntax:
-                    content = content.replace(
-                        TEMPLATE_VAR_OPEN, "${"
-                    ).replace(TEMPLATE_VAR_CLOSE, "}")
-                self._cache[cache_key] = content
-            except FileNotFoundError:
-                _LOGGER.error("Template file not found: %s", template_path)
-                self._cache[cache_key] = ""
-
-        return self._cache[cache_key]
-
-
-# Module-level template cache
-_template_cache = TemplateCache(_FRONTEND_DIR)
-
-
-def _slugify(name: str) -> str:
-    """Convert a name to a URL-safe slug.
-
-    Args:
-        name: Input name to slugify
-
-    Returns:
-        URL-safe slug (lowercase, special chars replaced with underscores)
-    """
-    if not name:
-        return "unknown"
-    slug = name.lower()
-    for char in " /\\:.,@":
-        slug = slug.replace(char, "_")
-    return "".join(c for c in slug if c.isalnum() or c == "_")
-
-
-def _escape_html(text: str) -> str:
-    """Escape HTML special characters for safe display.
-
-    Args:
-        text: Raw text to escape
-
-    Returns:
-        HTML-escaped text
-    """
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
 # --- Entry setup/unload ---
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Zepp2Hass from a config entry.
 
-    Creates coordinator, registers webhook views, and sets up device.
+    Creates coordinator, registers webhook, and sets up device.
 
     Args:
         hass: Home Assistant instance
@@ -174,40 +95,46 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry_id = entry.entry_id
     device_name = entry.data.get("name", "zepp_device")
-    slug = _slugify(device_name)
 
-    # Build URLs
-    webhook_url = f"{WEBHOOK_BASE}/{slug}"
-    log_url = f"{webhook_url}/log"
-    static_url = f"{webhook_url}/static"
+    # Get or generate webhook ID (for migration from old config entries)
+    webhook_id = entry.data.get(CONF_WEBHOOK_ID)
+    if not webhook_id:
+        # Migration: generate webhook_id for existing entries without one
+        webhook_id = webhook_generate_id()
+        hass.config_entries.async_update_entry(
+            entry,
+            data={**entry.data, CONF_WEBHOOK_ID: webhook_id},
+        )
+        _LOGGER.info("Migrated entry %s: generated new webhook_id", entry_id)
+
+    # Build webhook URL
     base_url = hass.config.external_url or hass.config.internal_url or "http://localhost:8123"
-    full_webhook_url = f"{base_url}{webhook_url}"
+    webhook_path = f"/api/webhook/{webhook_id}"
+    full_webhook_url = f"{base_url}{webhook_path}"
 
     # Initialize components
-    coordinator = ZeppDataUpdateCoordinator(hass, entry_id, device_name)
-    error_logs: deque[dict[str, Any]] = deque(maxlen=MAX_ERROR_LOGS)
+    coordinator = ZeppDataUpdateCoordinator(hass, entry, device_name)
     rate_limiter = RateLimiter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
 
     # Store entry data
     hass.data[DOMAIN][entry_id] = {
         "coordinator": coordinator,
-        "webhook_url": webhook_url,
+        "webhook_id": webhook_id,
+        "webhook_path": webhook_path,
         "webhook_full_url": full_webhook_url,
-        "error_logs": error_logs,
         "rate_limiter": rate_limiter,
     }
 
-    # Register HTTP views
-    # Dashboard and Log views require authentication
-    hass.http.register_view(ZeppDashboardView(hass, entry_id, webhook_url, static_url))
-    hass.http.register_view(ZeppLogView(hass, entry_id, webhook_url, static_url, log_url))
-    # Webhook view is public to receive data from Zepp devices
-    hass.http.register_view(ZeppWebhookView(hass, entry_id, webhook_url, static_url))
-
-    # Register static files securely using Home Assistant's recommended method
-    await hass.http.async_register_static_paths([
-        StaticPathConfig(static_url, str(_FRONTEND_DIR), False)
-    ])
+    # Register webhook using Home Assistant's native webhook component
+    # This provides a secure, random URL that is not guessable
+    webhook_register(
+        hass,
+        DOMAIN,
+        f"Zepp2Hass {device_name}",
+        webhook_id,
+        _create_webhook_handler(hass, entry_id),
+        allowed_methods=["POST"],
+    )
 
     # Register device
     device_registry = dr.async_get(hass)
@@ -217,7 +144,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         manufacturer=DEFAULT_MANUFACTURER,
         model=DEFAULT_MODEL,
         name=device_name,
-        configuration_url=full_webhook_url if base_url != "http://localhost:8123" else None,
+        configuration_url=full_webhook_url,
     )
 
     _LOGGER.info("Registered Zepp2Hass webhook for %s at %s", device_name, full_webhook_url)
@@ -226,159 +153,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry.
+def _create_webhook_handler(hass: HomeAssistant, entry_id: str):
+    """Create a webhook handler function for the given entry.
 
     Args:
         hass: Home Assistant instance
-        entry: Config entry being unloaded
+        entry_id: Config entry ID
 
     Returns:
-        True if unload successful
-    """
-    unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, PLATFORMS)
-
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-        _LOGGER.info("Successfully unloaded Zepp2Hass entry %s", entry.entry_id)
-
-    return unload_ok
-
-
-# --- HTTP Views ---
-
-
-class ZeppViewBase(HomeAssistantView):
-    """Base class for Zepp views with common functionality.
-
-    Provides shared attributes and helper methods for webhook views.
+        Async webhook handler function
     """
 
-    requires_auth = False
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry_id: str,
-        webhook_path: str,
-        static_url: str,
-    ) -> None:
-        """Initialize the view with common attributes.
+    async def handle_webhook(
+        hass: HomeAssistant, webhook_id: str, request: web.Request
+    ) -> web.Response:
+        """Handle incoming webhook requests from Zepp devices.
 
         Args:
             hass: Home Assistant instance
-            entry_id: Config entry ID
-            webhook_path: Webhook URL path
-            static_url: Base URL for static assets
-        """
-        self.hass = hass
-        self.entry_id = entry_id
-        self.webhook_path = webhook_path
-        self.static_url = static_url
-
-    def _get_entry_data(self) -> dict[str, Any] | None:
-        """Get entry data from hass.data.
-
-        Returns:
-            Entry data dict or None if not found
-        """
-        return self.hass.data.get(DOMAIN, {}).get(self.entry_id)
-
-    def _html_response(self, content: str) -> web.Response:
-        """Create an HTML response.
-
-        Args:
-            content: HTML content
-
-        Returns:
-            HTTP response with text/html content type
-        """
-        return web.Response(text=content, content_type="text/html")
-
-
-class ZeppDashboardView(ZeppViewBase):
-    """Display dashboard for Zepp devices (requires authentication)."""
-
-    requires_auth = True
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry_id: str,
-        webhook_path: str,
-        static_url: str,
-    ) -> None:
-        """Initialize the dashboard view."""
-        super().__init__(hass, entry_id, webhook_path, static_url)
-        self.url = webhook_path
-        self.name = f"api:zepp2hass:dashboard:{entry_id}"
-
-    def _render_dashboard(self, webhook_url: str) -> str:
-        """Render the dashboard HTML.
-
-        Args:
-            webhook_url: Full webhook URL for display
-
-        Returns:
-            Rendered HTML string
-        """
-        template = Template(_template_cache.load("dashboard.html", convert_syntax=True))
-
-        return template.safe_substitute(
-            STATIC_URL=self.static_url,
-            WEBHOOK_PATH=self.webhook_path,
-            WEBHOOK_URL=webhook_url,
-        )
-
-    async def get(self, request: web.Request) -> web.Response:
-        """Display dashboard with webhook URL.
-
-        Args:
-            request: HTTP request
-
-        Returns:
-            Rendered dashboard HTML
-        """
-        entry_data = self._get_entry_data() or {}
-        webhook_url = entry_data.get("webhook_full_url", "")
-
-        return self._html_response(self._render_dashboard(webhook_url))
-
-
-class ZeppWebhookView(ZeppViewBase):
-    """Handle webhook POST requests from Zepp devices (public endpoint)."""
-
-    requires_auth = False
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry_id: str,
-        webhook_path: str,
-        static_url: str,
-    ) -> None:
-        """Initialize the webhook view."""
-        super().__init__(hass, entry_id, webhook_path, static_url)
-        self.url = webhook_path
-        self.name = f"api:zepp2hass:webhook:{entry_id}"
-
-    async def post(self, request: web.Request) -> web.Response:
-        """Receive and process webhook data from Zepp device.
-
-        Args:
-            request: HTTP request with JSON payload
+            webhook_id: The webhook ID that was called
+            request: The HTTP request
 
         Returns:
             JSON response indicating success or error
         """
-        entry_data = self._get_entry_data()
+        entry_data = hass.data.get(DOMAIN, {}).get(entry_id)
         if not entry_data:
             return web.json_response({"error": "Entry not found"}, status=404)
 
-        # Rate limiting check (before parsing body for efficiency)
+        # Rate limiting check
         rate_limiter: RateLimiter = entry_data["rate_limiter"]
         if not rate_limiter.is_allowed():
-            _LOGGER.warning("Rate limit exceeded for %s", self.entry_id)
+            _LOGGER.warning("Rate limit exceeded for %s", entry_id)
             return web.json_response(
                 {
                     "error": "Rate limit exceeded",
@@ -405,126 +211,37 @@ class ZeppWebhookView(ZeppViewBase):
             )
 
         # Process payload
-        self._handle_error_logging(entry_data["error_logs"], payload)
-
         coordinator: ZeppDataUpdateCoordinator = entry_data["coordinator"]
         coordinator.async_set_updated_data(payload)
 
-        _LOGGER.debug("Received payload for %s", self.entry_id)
+        _LOGGER.debug("Received payload for %s", entry_id)
         return web.json_response({"status": "ok"})
 
-    @staticmethod
-    def _handle_error_logging(
-        error_logs: deque[dict[str, Any]],
-        payload: dict[str, Any],
-    ) -> None:
-        """Extract and log any errors from the payload.
-
-        Args:
-            error_logs: Deque to store error entries
-            payload: Webhook payload to check for errors
-        """
-        last_error = payload.get("last_error")
-        if last_error is not None:
-            error_logs.appendleft({
-                "timestamp": datetime.now().isoformat(),
-                "error": last_error,
-            })
-            _LOGGER.warning("Logged error from payload: %s", last_error)
+    return handle_webhook
 
 
-class ZeppLogView(ZeppViewBase):
-    """Display error log history for Zepp devices."""
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry.
 
-    requires_auth = True
+    Args:
+        hass: Home Assistant instance
+        entry: Config entry being unloaded
 
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry_id: str,
-        webhook_path: str,
-        static_url: str,
-        log_url: str,
-    ) -> None:
-        """Initialize the log view.
+    Returns:
+        True if unload successful
+    """
+    unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, PLATFORMS)
 
-        Args:
-            hass: Home Assistant instance
-            entry_id: Config entry ID
-            webhook_path: Webhook URL path
-            static_url: Base URL for static assets
-            log_url: URL for this log view
-        """
-        super().__init__(hass, entry_id, webhook_path, static_url)
-        self.url = log_url
-        self.name = f"api:zepp2hass:log:{entry_id}"
+    if unload_ok:
+        # Unregister webhook
+        entry_data = hass.data[DOMAIN].get(entry.entry_id, {})
+        webhook_id = entry_data.get("webhook_id")
+        if webhook_id:
+            webhook_unregister(hass, webhook_id)
 
-    def _format_error_item(self, log: dict[str, Any]) -> str:
-        """Format a single error log entry as HTML.
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        _LOGGER.info("Successfully unloaded Zepp2Hass entry %s", entry.entry_id)
 
-        Args:
-            log: Error log entry dict
+    return unload_ok
 
-        Returns:
-            Rendered HTML for error item
-        """
-        timestamp = log.get("timestamp", "Unknown time")
-        error = log.get("error", "Unknown error")
 
-        # Format timestamp
-        try:
-            dt = datetime.fromisoformat(timestamp)
-            formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
-        except (ValueError, TypeError):
-            formatted_time = str(timestamp)
-
-        # Format error message
-        if isinstance(error, dict):
-            error_str = json.dumps(error, indent=2, ensure_ascii=False)
-        else:
-            error_str = str(error)
-
-        template = Template(_template_cache.load("partials/error_item.html"))
-        return template.safe_substitute(
-            FORMATTED_TIME=formatted_time,
-            ERROR_MESSAGE=_escape_html(error_str),
-        )
-
-    def _render_error_list(self, error_logs: deque[dict[str, Any]]) -> str:
-        """Render the error list or empty state.
-
-        Args:
-            error_logs: Deque of error log entries
-
-        Returns:
-            Rendered HTML for error list
-        """
-        if not error_logs:
-            return _template_cache.load("partials/no_errors.html")
-
-        items = "".join(self._format_error_item(log) for log in error_logs)
-        return f'<div class="error-list">{items}</div>'
-
-    async def get(self, request: web.Request) -> web.Response:
-        """Display error log page.
-
-        Args:
-            request: HTTP request
-
-        Returns:
-            Rendered error log HTML
-        """
-        entry_data = self._get_entry_data() or {}
-        error_logs: deque[dict[str, Any]] = entry_data.get("error_logs", deque())
-
-        template = Template(_template_cache.load("log.html", convert_syntax=True))
-        count = len(error_logs)
-
-        html = template.safe_substitute(
-            STATIC_URL=self.static_url,
-            WEBHOOK_PATH=self.webhook_path,
-            ERROR_COUNT=f"{count} error{'s' if count != 1 else ''}",
-            ERROR_LIST=self._render_error_list(error_logs),
-        )
-
-        return self._html_response(html)

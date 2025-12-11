@@ -3,10 +3,10 @@
   "name": "Zepp2Hass",
   "codeowners": ["@davidepalleschi"],
   "config_flow": true,
-  "dependencies": ["http"],
+  "dependencies": ["webhook"],
   "documentation": "https://github.com/davidepalleschi/zepp2hass",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/davidepalleschi/zepp2hass/issues",
   "requirements": [],
-  "version": "1.0.3"
+  "version": "1.0.4"
 }
