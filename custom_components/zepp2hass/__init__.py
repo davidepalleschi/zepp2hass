@@ -293,5 +293,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Successfully unloaded Zepp2Hass entry %s", entry.entry_id)
 
     return unload_ok
-
-
