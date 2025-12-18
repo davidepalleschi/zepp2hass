@@ -6,6 +6,7 @@ and exposes it as Home Assistant sensors.
 from __future__ import annotations
 
 from collections import deque
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -41,7 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 _DASHBOARD_TEMPLATE: str | None = None
 
 
-def _load_dashboard_template() -> str:
+async def _load_dashboard_template() -> str:
     """Load dashboard HTML template, with caching.
     
     Returns:
@@ -51,7 +52,8 @@ def _load_dashboard_template() -> str:
     if _DASHBOARD_TEMPLATE is None:
         dashboard_path = Path(__file__).parent / "frontend" / "dashboard.html"
         try:
-            _DASHBOARD_TEMPLATE = dashboard_path.read_text(encoding="utf-8")
+            # Use asyncio.to_thread to run the blocking file read in a thread pool
+            _DASHBOARD_TEMPLATE = await asyncio.to_thread(dashboard_path.read_text, encoding="utf-8")
         except FileNotFoundError:
             _LOGGER.error("Dashboard template not found at %s", dashboard_path)
             _DASHBOARD_TEMPLATE = "<html><body><h1>Webhook URL</h1><p>{{WEBHOOK_URL}}</p></body></html>"
@@ -219,7 +221,7 @@ def _create_webhook_handler(hass: HomeAssistant, entry_id: str):
             static_url = f"/api/{DOMAIN}/static"
             
             # Load and process dashboard HTML template
-            dashboard_html = _load_dashboard_template()
+            dashboard_html = await _load_dashboard_template()
             
             # Replace template variables
             dashboard_html = dashboard_html.replace("{{WEBHOOK_URL}}", webhook_url)
