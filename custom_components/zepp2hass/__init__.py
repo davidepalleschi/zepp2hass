@@ -133,12 +133,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Migrated entry %s: generated new webhook_id", entry_id)
 
     # Build webhook URL
-    # base_url = hass.config.external_url or hass.config.internal_url or "http://localhost:8123"
+    # base_url = hass.config.external_url or hass.config.internal_url
     # webhook_path = f"/api/webhook/{webhook_id}"
     # full_webhook_url = f"{base_url}{webhook_path}"
 
     try:
-        base_url = get_url(hass, allow_internal=True, allow_external=True)
+        base_url = get_url(hass, allow_internal=True, allow_external=True, prefer_external=True)
     except Exception:
         base_url = None
 
