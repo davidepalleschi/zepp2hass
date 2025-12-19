@@ -25,6 +25,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_WEBHOOK_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.network import get_url
 
 from .const import (
     DOMAIN,
@@ -132,9 +133,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Migrated entry %s: generated new webhook_id", entry_id)
 
     # Build webhook URL
-    base_url = hass.config.external_url or hass.config.internal_url or "http://localhost:8123"
-    webhook_path = f"/api/webhook/{webhook_id}"
-    full_webhook_url = f"{base_url}{webhook_path}"
+    # base_url = hass.config.external_url or hass.config.internal_url or "http://localhost:8123"
+    # webhook_path = f"/api/webhook/{webhook_id}"
+    # full_webhook_url = f"{base_url}{webhook_path}"
+
+    try:
+        base_url = get_url(hass, allow_internal=True, allow_external=True)
+    except Exception:
+        base_url = None
+
+    if not base_url or "localhost" in base_url:
+        # You might want to log a warning or show an error in the config_flow
+        # because without a real IP or domain, the watch will never work.
+        full_webhook_url = "CONFIGURE_URL_IN_HA_NETWORK_SETTINGS"
+    else:
+        webhook_path = f"/api/webhook/{webhook_id}"
+        full_webhook_url = f"{base_url}{webhook_path}"
 
     # Initialize components
     coordinator = ZeppDataUpdateCoordinator(hass, entry, device_name)
