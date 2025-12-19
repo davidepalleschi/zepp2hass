@@ -118,6 +118,62 @@ To send data from your Zepp smartwatch to Home Assistant, you need to install th
 
 ---
 
+## 📱 Supported Devices
+
+### 🏃 Serie Balance
+| Device | Status |
+|--------|--------|
+| Amazfit Balance | ✅ Supported |
+| Amazfit Balance 2 | ✅ Supported |
+| Amazfit Balance 2 XT | ✅ Supported |
+
+### 🦕 Serie T-Rex (Rugged)
+| Device | Status |
+|--------|--------|
+| Amazfit T-Rex Ultra | ✅ Supported |
+| Amazfit T-Rex 3 | ✅ Supported |
+| Amazfit T-Rex 3 Pro (44mm) | ✅ Supported |
+| Amazfit T-Rex 3 Pro (48mm) | ✅ Supported |
+
+### 🐆 Serie Cheetah (Running)
+| Device | Status |
+|--------|--------|
+| Amazfit Cheetah (Round) | ✅ Supported |
+| Amazfit Cheetah (Square) | ✅ Supported |
+| Amazfit Cheetah Pro | ✅ Supported |
+| Amazfit Cheetah Pro Kelvin Kiptum | ✅ Supported |
+
+### 💪 Serie Active
+| Device | Status |
+|--------|--------|
+| Amazfit Active | ✅ Supported |
+| Amazfit Active Edge | ✅ Supported |
+| Amazfit Active 2 (Round) | ✅ Supported |
+| Amazfit Active 2 NFC (Round) | ✅ Supported |
+| Amazfit Active 2 (Square) | ✅ Supported |
+| Amazfit Active 2 NFC (Square) | ✅ Supported |
+
+### ⌚ Serie GTR & GTS
+| Device | Status |
+|--------|--------|
+| Amazfit GTR 4 | ✅ Supported |
+| Amazfit GTR 4 Limited Edition | ✅ Supported |
+| Amazfit GTS 4 | ✅ Supported |
+
+### 📟 Serie Bip
+| Device | Status |
+|--------|--------|
+| Amazfit Bip 5 Unity | ✅ Supported |
+| Amazfit Bip 5 Core | ✅ Supported |
+| Amazfit Bip 6 | ✅ Supported |
+
+### 🎯 Other Models
+| Device | Status |
+|--------|--------|
+| Amazfit Falcon | ✅ Supported |
+
+---
+
 ## 🎯 Usage Examples
 
 **Battery low automation:**
