@@ -112,65 +112,91 @@ To send data from your Zepp smartwatch to Home Assistant, you need to install th
 3. **Apply Settings on Your Watch**
    - Open the **zepp2hass** app directly on your smartwatch
    - Click the **"Apply settings"** button at the bottom
-   - The app will now start sending data to Home Assistant
+   - Restart your smartwatch
+   - Click the **"Apply settings"** button again once it's back on
 
 > **Tip:** For most use cases, a 1-2 minute interval provides a good balance between data freshness and battery life.
 
 ---
 
+## ⚠️ Known Issues & Workarounds
+
+### "Sensors not initialized" Error (Bip 6 & others)
+
+This error occurs when the app tries to access a hardware sensor missing from your device (e.g., Body Temperature on **Bip 6**).
+
+* **Status:** A fix has been developed but it is **not yet available** on the official Zepp App Store due to approval times.
+* **Workaround:** You can install the fixed version immediately using **Developer Mode**.
+
+<details>
+<summary><b>Click here for the Developer Mode & QR Guide</b></summary>
+
+1. **Enable Developer Mode:** Open the **Zepp App** on your smartphone. Go to **Profile** > **Settings** > **About** and tap the **Zepp logo 7 times**.
+2. **Access Developer Tools:** A new "Developer Mode" option will appear in Device > General.
+3. **Scan QR Code:** Within the Developer Mode tools, install a Mini Program via QR code using the + on the top right corner and Scan.
+
+QR CODE FOR BIP 6
+<div align="center">
+<img src="qr_code.png" alt="Bip 6 Fix QR Code" width="250"/>
+</div>
+</details>
+
+---
+
+### Settings not syncing (Interval/Webhook)
+
+If your watch ignores new settings (like a changed sync interval) and keeps showing "Started! 1 min", follow this exact sequence using the app on your smartwatch:
+
+1. Tap the **"Apply settings"** button on your **watch app**.
+2. **Restart** your smartwatch.
+3. Tap the **"Apply settings"** button on your **watch app** again once it's back on.
+
+---
+
 ## 📱 Supported Devices
 
+<details>
+<summary>Click to see supported devices</summary>
+
 ### 🏃 Serie Balance
-| Device | Status |
-|--------|--------|
-| Amazfit Balance | ✅ Supported |
-| Amazfit Balance 2 | ✅ Supported |
-| Amazfit Balance 2 XT | ✅ Supported |
+- Amazfit Balance
+- Amazfit Balance 2
+- Amazfit Balance 2 XT
 
 ### 🦕 Serie T-Rex (Rugged)
-| Device | Status |
-|--------|--------|
-| Amazfit T-Rex Ultra | ✅ Supported |
-| Amazfit T-Rex 3 | ✅ Supported |
-| Amazfit T-Rex 3 Pro (44mm) | ✅ Supported |
-| Amazfit T-Rex 3 Pro (48mm) | ✅ Supported |
+- Amazfit T-Rex Ultra
+- Amazfit T-Rex 3
+- Amazfit T-Rex 3 Pro (44mm)
+- Amazfit T-Rex 3 Pro (48mm)
 
 ### 🐆 Serie Cheetah (Running)
-| Device | Status |
-|--------|--------|
-| Amazfit Cheetah (Round) | ✅ Supported |
-| Amazfit Cheetah (Square) | ✅ Supported |
-| Amazfit Cheetah Pro | ✅ Supported |
-| Amazfit Cheetah Pro Kelvin Kiptum | ✅ Supported |
+- Amazfit Cheetah (Round)
+- Amazfit Cheetah (Square)
+- Amazfit Cheetah Pro
+- Amazfit Cheetah Pro Kelvin Kiptum
 
 ### 💪 Serie Active
-| Device | Status |
-|--------|--------|
-| Amazfit Active | ✅ Supported |
-| Amazfit Active Edge | ✅ Supported |
-| Amazfit Active 2 (Round) | ✅ Supported |
-| Amazfit Active 2 NFC (Round) | ✅ Supported |
-| Amazfit Active 2 (Square) | ✅ Supported |
-| Amazfit Active 2 NFC (Square) | ✅ Supported |
+- Amazfit Active
+- Amazfit Active Edge
+- Amazfit Active 2 (Round)
+- Amazfit Active 2 NFC (Round)
+- Amazfit Active 2 (Square)
+- Amazfit Active 2 NFC (Square)
 
 ### ⌚ Serie GTR & GTS
-| Device | Status |
-|--------|--------|
-| Amazfit GTR 4 | ✅ Supported |
-| Amazfit GTR 4 Limited Edition | ✅ Supported |
-| Amazfit GTS 4 | ✅ Supported |
+- Amazfit GTR 4
+- Amazfit GTR 4 Limited Edition
+- Amazfit GTS 4
 
 ### 📟 Serie Bip
-| Device | Status |
-|--------|--------|
-| Amazfit Bip 5 Unity | ✅ Supported |
-| Amazfit Bip 5 Core | ✅ Supported |
-| Amazfit Bip 6 | ✅ Supported |
+- Amazfit Bip 5 Unity
+- Amazfit Bip 5 Core
+- Amazfit Bip 6
 
 ### 🎯 Other Models
-| Device | Status |
-|--------|--------|
-| Amazfit Falcon | ✅ Supported |
+- Amazfit Falcon
+
+</details>
 
 ---
 
