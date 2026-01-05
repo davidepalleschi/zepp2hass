@@ -16,6 +16,9 @@ DEFAULT_MANUFACTURER: Final[str] = "Zepp"
 DEFAULT_MODEL: Final[str] = "Zepp Smartwatch"
 DEFAULT_DEVICE_NAME: Final[str] = "zepp_device"
 
+# Configuration keys
+CONF_BASE_URL: Final[str] = "base_url"
+
 # Data section keys (JSON payload structure)
 class DataSection:
     """Keys for top-level sections in the webhook payload."""

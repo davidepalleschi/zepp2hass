@@ -34,6 +34,7 @@ from .const import (
     RATE_LIMIT_WINDOW_SECONDS,
     DEFAULT_MANUFACTURER,
     DEFAULT_MODEL,
+    CONF_BASE_URL,
 )
 from .coordinator import ZeppDataUpdateCoordinator
 
@@ -133,22 +134,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Migrated entry %s: generated new webhook_id", entry_id)
 
     # Build webhook URL
-    # base_url = hass.config.external_url or hass.config.internal_url
-    # webhook_path = f"/api/webhook/{webhook_id}"
-    # full_webhook_url = f"{base_url}{webhook_path}"
+    # Check if user provided a custom base URL in advanced settings
+    custom_base_url = entry.data.get(CONF_BASE_URL, "")
 
-    try:
-        base_url = get_url(hass, allow_internal=True, allow_external=True, prefer_external=True)
-    except Exception:
-        base_url = None
-
-    if not base_url or "localhost" in base_url:
-        # You might want to log a warning or show an error in the config_flow
-        # because without a real IP or domain, the watch will never work.
-        full_webhook_url = "CONFIGURE_URL_IN_HA_NETWORK_SETTINGS"
-    else:
+    if custom_base_url:
+        # Use custom base URL if provided
+        base_url = custom_base_url.rstrip("/")
         webhook_path = f"/api/webhook/{webhook_id}"
         full_webhook_url = f"{base_url}{webhook_path}"
+        _LOGGER.info("Using custom base URL for webhook: %s", base_url)
+    else:
+        # Auto-detect base URL using Home Assistant's network configuration
+        try:
+            base_url = get_url(hass, allow_internal=True, allow_external=True, prefer_external=True)
+        except Exception:
+            base_url = None
+
+        if not base_url or "localhost" in base_url:
+            # You might want to log a warning or show an error in the config_flow
+            # because without a real IP or domain, the watch will never work.
+            full_webhook_url = "CONFIGURE_URL_IN_HA_NETWORK_SETTINGS"
+        else:
+            webhook_path = f"/api/webhook/{webhook_id}"
+            full_webhook_url = f"{base_url}{webhook_path}"
 
     # Initialize components
     coordinator = ZeppDataUpdateCoordinator(hass, entry, device_name)
