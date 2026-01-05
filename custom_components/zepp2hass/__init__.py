@@ -133,9 +133,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         _LOGGER.info("Migrated entry %s: generated new webhook_id", entry_id)
 
+    # Migration: move base_url from data to options for existing entries
+    if CONF_BASE_URL in entry.data and CONF_BASE_URL not in entry.options:
+        new_data = dict(entry.data)
+        base_url_value = new_data.pop(CONF_BASE_URL)
+        hass.config_entries.async_update_entry(
+            entry,
+            data=new_data,
+            options={CONF_BASE_URL: base_url_value},
+        )
+        _LOGGER.info("Migrated entry %s: moved base_url from data to options", entry_id)
+
     # Build webhook URL
-    # Check if user provided a custom base URL in options
-    custom_base_url = entry.options.get(CONF_BASE_URL, "")
+    # Check if user provided a custom base URL in options (or data for old entries)
+    custom_base_url = entry.options.get(CONF_BASE_URL, "") or entry.data.get(CONF_BASE_URL, "")
 
     if custom_base_url:
         # Use custom base URL if provided
