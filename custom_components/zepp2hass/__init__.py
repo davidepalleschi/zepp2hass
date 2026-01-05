@@ -215,23 +215,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.info("Registered Zepp2Hass webhook for %s at %s", device_name, full_webhook_url)
 
-    # Listen for option changes to reload the integration
-    entry.async_on_unload(entry.add_update_listener(async_options_updated))
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
-
-
-async def async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update.
-
-    Called when options are changed. Reloads the integration to apply changes.
-
-    Args:
-        hass: Home Assistant instance
-        entry: Config entry that was updated
-    """
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _create_webhook_handler(hass: HomeAssistant, entry_id: str):

@@ -11,7 +11,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components.webhook import async_generate_id as webhook_generate_id
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.const import CONF_NAME, CONF_WEBHOOK_ID
 
 from .const import DOMAIN, DEFAULT_DEVICE_NAME, CONF_BASE_URL
@@ -89,7 +89,7 @@ class Zepp2HassConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     def async_get_options_flow(
         config_entry: ConfigEntry,
-    ) -> OptionsFlow:
+    ) -> OptionsFlowWithReload:
         """Get the options flow for this handler.
 
         Args:
@@ -101,48 +101,31 @@ class Zepp2HassConfigFlow(ConfigFlow, domain=DOMAIN):
         return Zepp2HassOptionsFlow(config_entry)
 
 
-class Zepp2HassOptionsFlow(OptionsFlow):
+class Zepp2HassOptionsFlow(OptionsFlowWithReload):
     """Handle options flow for Zepp2Hass.
 
     Allows users to configure advanced options like custom webhook URL
-    after the initial setup.
+    after the initial setup. Automatically reloads the integration when
+    options change.
     """
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize the options flow.
-
-        Args:
-            config_entry: The config entry to configure options for
-        """
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle options flow.
+        """Manage the options.
 
         Args:
             user_input: Form data if submitted, None if first display
 
         Returns:
-            Config flow result (form or updated entry)
+            Config flow result (form or created entry)
         """
         if user_input is not None:
-            # Update the options
-            return self.async_create_entry(
-                title="",
-                data=user_input,
-            )
-
-        # Show options form with current values
-        current_base_url = self.config_entry.options.get(CONF_BASE_URL, "")
+            return self.async_create_entry(data=user_input)
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Optional(
-                    CONF_BASE_URL,
-                    description={"suggested_value": current_base_url},
-                ): str,
-            }),
+            data_schema=self.add_suggested_values_to_schema(
+                OPTIONS_SCHEMA, self.config_entry.options
+            ),
         )
