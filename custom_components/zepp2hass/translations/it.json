@@ -3,14 +3,12 @@
     "step": {
       "user": {
         "title": "Connetti Dispositivo Zepp",
-        "description": "Inserisci un nome per il tuo smartwatch Zepp.",
+        "description": "Inserisci un nome per il tuo smartwatch Zepp. Le opzioni avanzate possono essere configurate successivamente nelle impostazioni dell'integrazione.",
         "data": {
-          "name": "Nome Dispositivo",
-          "base_url": "URL Base Personalizzato"
+          "name": "Nome Dispositivo"
         },
         "data_description": {
-          "name": "Un nome univoco per identificare questo dispositivo in Home Assistant",
-          "base_url": "URL base personalizzato per il webhook (es. http://192.168.1.100:8123). Lascia vuoto per il rilevamento automatico. Usa questa opzione solo se l'URL del webhook non è corretto."
+          "name": "Un nome univoco per identificare questo dispositivo in Home Assistant"
         }
       }
     },
@@ -21,13 +19,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Configura Opzioni",
-        "description": "Aggiorna la configurazione dell'URL del webhook.",
+        "title": "Opzioni Avanzate",
+        "description": "Configura le impostazioni avanzate del webhook. Lascia vuoto per usare l'URL rilevato automaticamente (consigliato).",
         "data": {
           "base_url": "URL Base Personalizzato"
         },
         "data_description": {
-          "base_url": "URL base personalizzato per il webhook (es. http://192.168.1.100:8123). Lascia vuoto per il rilevamento automatico."
+          "base_url": "URL base personalizzato per il webhook (es. http://192.168.1.100:8123). Lascia vuoto per il rilevamento automatico. Usa questa opzione solo se l'URL del webhook non è corretto."
         }
       }
     }
