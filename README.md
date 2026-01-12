@@ -10,6 +10,8 @@
 
 **Connect your Zepp smartwatch to Home Assistant and track your health & fitness data in real-time! 📊**
 
+> **If you find this integration useful, please give it a star on GitHub! It really helps the project grow! ⭐**
+
 [![GitHub release](https://img.shields.io/github/release/davidepalleschi/zepp2hass.svg)](https://github.com/davidepalleschi/zepp2hass/releases)
 [![GitHub issues](https://img.shields.io/github/issues/davidepalleschi/zepp2hass.svg)](https://github.com/davidepalleschi/zepp2hass/issues)
 [![License](https://img.shields.io/github/license/davidepalleschi/zepp2hass.svg)](https://github.com/davidepalleschi/zepp2hass/blob/main/LICENSE)
