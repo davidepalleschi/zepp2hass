@@ -184,14 +184,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register webhook using Home Assistant's native webhook component
     # This provides a secure, random URL that is not guessable
-    webhook_register(
-        hass,
-        DOMAIN,
-        f"Zepp2Hass {device_name}",
-        webhook_id,
-        _create_webhook_handler(hass, entry_id),
-        allowed_methods=["GET", "POST"],
-    )
+    try:
+        webhook_register(
+            hass,
+            DOMAIN,
+            f"Zepp2Hass {device_name}",
+            webhook_id,
+            _create_webhook_handler(hass, entry_id),
+            allowed_methods=["GET", "POST"],
+        )
+    except ValueError:
+        _LOGGER.warning("Webhook %s already registered, unregistering and retrying", webhook_id)
+        webhook_unregister(hass, webhook_id)
+        webhook_register(
+            hass,
+            DOMAIN,
+            f"Zepp2Hass {device_name}",
+            webhook_id,
+            _create_webhook_handler(hass, entry_id),
+            allowed_methods=["GET", "POST"],
+        )
 
     # Register static path for frontend assets (CSS, etc.)
     # Only register once per domain (check if already registered)
