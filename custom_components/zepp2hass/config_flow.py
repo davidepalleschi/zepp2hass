@@ -88,17 +88,10 @@ class Zepp2HassConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def async_get_options_flow(
-        config_entry: ConfigEntry,
+        config_entry: ConfigEntry,  # noqa: ARG004 (unused, required by HA)
     ) -> OptionsFlowWithReload:
-        """Get the options flow for this handler.
-
-        Args:
-            config_entry: The config entry to get options for
-
-        Returns:
-            OptionsFlow handler
-        """
-        return Zepp2HassOptionsFlow(config_entry)
+        """Create the options flow."""
+        return Zepp2HassOptionsFlow()
 
 
 class Zepp2HassOptionsFlow(OptionsFlowWithReload):
@@ -112,14 +105,7 @@ class Zepp2HassOptionsFlow(OptionsFlowWithReload):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Manage the options.
-
-        Args:
-            user_input: Form data if submitted, None if first display
-
-        Returns:
-            Config flow result (form or created entry)
-        """
+        """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
