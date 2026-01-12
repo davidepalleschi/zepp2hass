@@ -210,13 +210,7 @@ Expected response:
 
 ## 🤝 Contributing
 
-Contributions are welcome! 🎉
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ---
 
@@ -226,19 +220,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
 
-- Zepp/Amazfit for creating amazing smartwatch devices
-- Home Assistant community for inspiration and support
-- HACS for making custom integrations easy to install
-
----
 
 ## 📞 Support
 
-- 🐛 **Found a bug?** [Open an issue](https://github.com/davidepalleschi/zepp2hass/issues)
-- 💡 **Have a feature request?** [Create a feature request](https://github.com/davidepalleschi/zepp2hass/issues/new)
-- 📧 **Questions?** Check the [Issues](https://github.com/davidepalleschi/zepp2hass/issues) page
+For support, please see [SUPPORT.md](SUPPORT.md).
 
 ---
 
