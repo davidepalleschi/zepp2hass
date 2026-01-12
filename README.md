@@ -90,6 +90,8 @@ http://YOUR_HOME_ASSISTANT_IP:8123/api/webhook/WEBHOOK_ID
 ```
 
 > **Note:** The webhook URL uses a secure, randomly generated ID (not your device name).
+>
+> **Advanced:** You can change the **Base URL** (e.g., if you are using Nabu Casa or a reverse proxy) at any time by going to **Settings** → **Devices & Services** → **Zepp2Hass** → **Configure**. The integration will automatically reload to apply the new URL.
 
 ### Step 3: Install and Configure the Zepp2Hass App on Your Watch
 
