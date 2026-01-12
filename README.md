@@ -26,11 +26,16 @@ Zepp2Hass receives data from your Zepp smartwatch via a local webhook endpoint. 
 
 **Rate limiting** is built-in to protect your Home Assistant instance: max 30 requests per 60 seconds per device.
 
-### 🌐 Web Interface for Easy URL Copying
+### 🌐 Web Interface
 
-Each webhook comes with a **simple web interface** accessible via browser. The interface is designed **only** to make it easy to copy your webhook URL:
+Each webhook includes a minimalist web interface accessible via your browser, specifically designed for quick URL retrieval.
 
-- **View the webhook URL** with one-click copy button
+**How to find your URL:**
+
+1. Navigate to **Settings** → **Integrations** → **Zepp2Hass**.
+2. Select your **Device Name**.
+3. Under **Device Info**, click **Visit** to open the interface.
+4. Use the **one-click copy button** to grab your webhook URL.
 
 ### 📊 Comprehensive Sensor Suite
 
@@ -53,16 +58,9 @@ The integration creates multiple sensor types organized by category:
 ### HACS ⭐
 
 1. Open **HACS** in Home Assistant
-2. Go to **Integrations**
-3. Click the three dots (⋮) in the top right corner
-4. Select **Custom repositories**
-5. Add this repository:
-   - **Repository**: `https://github.com/davidepalleschi/zepp2hass`
-   - **Category**: Integration
-6. Click **Add**
-7. Search for **Zepp2Hass** in HACS
-8. Click **Download**
-9. Restart Home Assistant
+2. Search for **Zepp2Hass** in HACS
+3. Click **Download**
+4. Restart Home Assistant
 
 ---
 
@@ -78,20 +76,15 @@ The integration creates multiple sensor types organized by category:
 
 ### Step 2: Get Your Webhook URL
 
-After adding the integration, you can get your webhook URL in two ways:
+After adding the integration, you can get your webhook URL:
 
-1. **Home Assistant Logs** (Settings → System → Logs) - Look for the log entry showing the registered webhook URL
-2. **Web Interface** - Visit the webhook URL in your browser to see a simple page with a one-click copy button
-3. **Integration Interface** - Go to Settings → Integrations → Zepp2Hass → Click on device name → Under "Device Info" click "Visit". This will take you to the web interface.
+**Integration Interface** - Go to Settings → Integrations → Zepp2Hass → Click on device name → Under "Device Info" click "Visit". This will take you to the web interface.
    
 The URL format is:
 ```
-http://YOUR_HOME_ASSISTANT_IP:8123/api/webhook/WEBHOOK_ID
+http://YOUR_HOME_ASSISTANT_BASE_URL/api/webhook/WEBHOOK_ID
 ```
-
-> **Note:** The webhook URL uses a secure, randomly generated ID (not your device name).
->
-> **Advanced:** You can change the **Base URL** (e.g., if you are using Nabu Casa or a reverse proxy) at any time by going to **Settings** → **Devices & Services** → **Zepp2Hass** → **Configure**. The integration will automatically reload to apply the new URL.
+> **Advanced:** You can change the **Base URL** at any time by going to **Settings** → **Devices & Services** → **Zepp2Hass** → **Configure**. The integration will automatically reload to apply the new URL.
 
 ### Step 3: Install and Configure the Zepp2Hass App on Your Watch
 
@@ -115,44 +108,8 @@ To send data from your Zepp smartwatch to Home Assistant, you need to install th
 3. **Apply Settings on Your Watch**
    - Open the **zepp2hass** app directly on your smartwatch
    - Click the **"Apply settings"** button at the bottom
-   - Restart your smartwatch
-   - Click the **"Apply settings"** button again once it's back on
 
-> **Tip:** For most use cases, a 1-2 minute interval provides a good balance between data freshness and battery life.
-
----
-
-## ⚠️ Known Issues & Workarounds
-
-### "Sensors not initialized" Error (Bip 6 & others)
-
-This error occurs when the app tries to access a hardware sensor missing from your device (e.g., Body Temperature on **Bip 6**).
-
-* **Status:** A fix has been developed but it is **not yet available** on the official Zepp App Store due to approval times.
-* **Workaround:** You can install the fixed version immediately using **Developer Mode**.
-
-<details>
-<summary><b>Click here for the Developer Mode & QR Guide</b></summary>
-
-1. **Enable Developer Mode:** Open the **Zepp App** on your smartphone. Go to **Profile** > **Settings** > **About** and tap the **Zepp logo 7 times**.
-2. **Access Developer Tools:** A new "Developer Mode" option will appear in Device > General.
-3. **Scan QR Code:** Within the Developer Mode tools, install a Mini Program via QR code using the + on the top right corner and Scan.
-
-QR CODE FOR BIP 6
-<div align="center">
-<img src="qr_code.png" alt="Bip 6 Fix QR Code" width="250"/>
-</div>
-</details>
-
----
-
-### Settings not syncing (Interval/Webhook)
-
-If your watch ignores new settings (like a changed sync interval) and keeps showing "Started! 1 min", follow this exact sequence using the app on your smartwatch:
-
-1. Tap the **"Apply settings"** button on your **watch app**.
-2. **Restart** your smartwatch.
-3. Tap the **"Apply settings"** button on your **watch app** again once it's back on.
+> **Tip:** For most use cases, a 2-5 minute interval provides a good balance between data freshness and battery life.
 
 ---
 
@@ -218,18 +175,6 @@ automation:
         data:
           message: "🔋 Watch battery low: {{ states('sensor.my_zepp_watch_battery') }}%"
 ```
-
-**Lovelace health card:**
-```yaml
-type: entities
-title: 🏃 Zepp Health
-entities:
-  - entity: sensor.my_zepp_watch_steps
-  - entity: sensor.my_zepp_watch_heart_rate_last
-  - entity: sensor.my_zepp_watch_calories
-  - entity: sensor.my_zepp_watch_battery
-```
-
 ---
 
 ## 🔧 Troubleshooting
@@ -237,10 +182,8 @@ entities:
 ### Sensors not updating?
 
 1. **Check the webhook URL** - Visit it in your browser to verify it's accessible
-2. **Check payload format** - Ensure JSON keys match expected structure
-3. **Check Home Assistant logs** - Look for errors under Settings → System → Logs
-4. **Verify network** - Ensure the device sending data can reach Home Assistant
-5. **Check rate limits** - Max 30 requests per 60 seconds per device
+2. **Check Home Assistant logs** - Look for errors under Settings → System → Logs
+3. **Verify network** - Ensure the device sending data can reach Home Assistant
 
 ### Test the webhook with curl
 
