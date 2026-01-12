@@ -213,23 +213,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         configuration_url=full_webhook_url,
     )
 
-    # Register update listener
-    entry.async_on_unload(entry.add_update_listener(async_update_options))
+
 
     _LOGGER.info("Registered Zepp2Hass webhook for %s at %s", device_name, full_webhook_url)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
-
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Update options.
-
-    Args:
-        hass: Home Assistant instance
-        entry: Config entry
-    """
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _create_webhook_handler(hass: HomeAssistant, entry_id: str):
@@ -326,7 +316,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     Returns:
         True if unload successful
     """
-    unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
         # Unregister webhook
