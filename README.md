@@ -82,7 +82,8 @@ After adding the integration, you can get your webhook URL in two ways:
 
 1. **Home Assistant Logs** (Settings → System → Logs) - Look for the log entry showing the registered webhook URL
 2. **Web Interface** - Visit the webhook URL in your browser to see a simple page with a one-click copy button
-
+3. **Integration Interface** - Go to Settings → Integrations → Zepp2Hass → Click on device name → Under "Device Info" click "Visit". This will take you to the web interface.
+   
 The URL format is:
 ```
 http://YOUR_HOME_ASSISTANT_IP:8123/api/webhook/WEBHOOK_ID
