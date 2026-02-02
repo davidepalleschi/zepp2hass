@@ -261,6 +261,54 @@ def format_duration_minutes(duration_ms: int | None) -> int | None:
         return None
     return duration_ms // 60000
 
+def format_workout_state(value: Any) -> str:
+    """Format workout state from parsed workout session data.
+    
+    Expects a dict which might contain 'state_error'.
+    Returns 'Active' if no error/state found, or the state value (capitalized).
+    """
+    if not isinstance(value, dict):
+        return "Unknown"
+        
+    state = value.get("state_error")
+    if state:
+        return str(state).capitalize()
+        
+    # If it's a dict but no state_error, and we are reading from the 'parsed' node,
+    # it implies valid data is present (unless empty), so we assume Active.
+    # However, if it's empty, it might be waiting for data.
+    if value:
+        return "Active"
+        
+    return "Unknown"
+
+
+def format_session_metric(value: Any) -> Any:
+    """Format a workout session metric.
+    
+    Expects a dict from the 'parsed' node.
+    - If 'state_error' is present, returns None (Unavailable).
+    - If 'value' key exists, returns it.
+    - If empty or invalid, returns None.
+    """
+    if not isinstance(value, dict):
+        return value
+        
+    if "state_error" in value:
+        # User requested to "always all the sensor in state using data"
+        # If stopped/paused, the metric is likely not applicable or 0.
+        # Returning None makes it 'Unknown' or 'Unavailable' in HA.
+        # For a dashboard, 0 might be preferable for rates, but misleading for totals.
+        # We'll return None and let HA handle it (or user can template it).
+        return None
+        
+    # Try common keys for value
+    if "value" in value:
+        return value["value"]
+        
+    # Fallback: maybe the value is the whole valid dict? Unlikely for a metric.
+    return None
+
 
 # --- Formatter registry ---
 
@@ -273,6 +321,8 @@ FORMATTER_MAP: dict[str, Formatter] = {
     "format_float": format_float,
     "format_birth_date": format_birth_date,
     "format_sleep_time": format_sleep_time,
+    "format_workout_state": format_workout_state,
+    "format_session_metric": format_session_metric,
 }
 
 # Formatters that handle their own rounding (don't apply default float rounding)

@@ -234,6 +234,159 @@ _SLEEP_SENSORS: Final[list[SensorDef]] = [
     ),
 ]
 
+# --- Workout Session Sensors ---
+# Live metrics during a workout
+
+_WORKOUT_SESSION_SENSORS: Final[list[SensorDef]] = [
+    # State Sensor (derived from one of the metrics, e.g. speed)
+    SensorDef(
+        json_path="workout_session.speed.parsed",
+        key="workout_state",
+        name="Workout State",
+        icon="mdi:run-fast",
+        formatter="format_workout_state",
+    ),
+    # Metrics
+    SensorDef(
+        json_path="workout_session.speed.parsed",
+        key="workout_speed",
+        name="Workout Speed",
+        unit="km/h",
+        icon="mdi:speedometer",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.SPEED,
+    ),
+    SensorDef(
+        json_path="workout_session.avg_speed.parsed",
+        key="workout_avg_speed",
+        name="Workout Avg Speed",
+        unit="km/h",
+        icon="mdi:speedometer-medium",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.SPEED,
+    ),
+    SensorDef(
+        json_path="workout_session.pace.parsed",
+        key="workout_pace",
+        name="Workout Pace",
+        unit="min/km",
+        icon="mdi:timer-sand",
+        formatter="format_session_metric",
+    ),
+    SensorDef(
+        json_path="workout_session.avg_pace.parsed",
+        key="workout_avg_pace",
+        name="Workout Avg Pace",
+        unit="min/km",
+        icon="mdi:timer-sand",
+        formatter="format_session_metric",
+    ),
+    SensorDef(
+        json_path="workout_session.distance.parsed",
+        key="workout_distance",
+        name="Workout Distance",
+        unit=UnitOfLength.METERS,
+        icon="mdi:map-marker-distance",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.DISTANCE,
+    ),
+    SensorDef(
+        json_path="workout_session.duration.parsed",
+        key="workout_duration",
+        name="Workout Duration",
+        unit=UnitOfTime.SECONDS,
+        icon="mdi:timer-outline",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.DURATION,
+    ),
+    SensorDef(
+        json_path="workout_session.calories.parsed",
+        key="workout_calories",
+        name="Workout Calories",
+        unit="kcal",
+        icon="mdi:fire",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.ENERGY,
+    ),
+    SensorDef(
+        json_path="workout_session.cadence.parsed",
+        key="workout_cadence",
+        name="Workout Cadence",
+        unit="rpm",
+        icon="mdi:run",
+        formatter="format_session_metric",
+    ),
+    SensorDef(
+        json_path="workout_session.avg_cadence.parsed",
+        key="workout_avg_cadence",
+        name="Workout Avg Cadence",
+        unit="rpm",
+        icon="mdi:run",
+        formatter="format_session_metric",
+    ),
+    SensorDef(
+        json_path="workout_session.altitude.parsed",
+        key="workout_altitude",
+        name="Workout Altitude",
+        unit=UnitOfLength.METERS,
+        icon="mdi:image-filter-hdr",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.DISTANCE,
+    ),
+    SensorDef(
+        json_path="workout_session.total_up_altitude.parsed",
+        key="workout_total_up_altitude",
+        name="Workout Total Up Altitude",
+        unit=UnitOfLength.METERS,
+        icon="mdi:arrow-up-bold",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.DISTANCE,
+    ),
+    SensorDef(
+        json_path="workout_session.total_count.parsed",
+        key="workout_total_count",
+        name="Workout Total Count",
+        unit="times",
+        icon="mdi:counter",
+        formatter="format_session_metric",
+    ),
+    SensorDef(
+        json_path="workout_session.vertical_speed.parsed",
+        key="workout_vertical_speed",
+        name="Workout Vertical Speed",
+        unit="m/h",
+        icon="mdi:arrow-up-bold-circle-outline",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.SPEED,
+    ),
+    SensorDef(
+        json_path="workout_session.downhill_count.parsed",
+        key="workout_downhill_count",
+        name="Workout Downhill Count",
+        unit="times",
+        icon="mdi:arrow-down-bold",
+        formatter="format_session_metric",
+    ),
+    SensorDef(
+        json_path="workout_session.total_downhill_distance.parsed",
+        key="workout_total_downhill_distance",
+        name="Workout Total Downhill Distance",
+        unit=UnitOfLength.METERS,
+        icon="mdi:arrow-down-bold-circle-outline",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.DISTANCE,
+    ),
+    SensorDef(
+        json_path="workout_session.stride.parsed",
+        key="workout_stride",
+        name="Workout Stride",
+        unit=UnitOfLength.CENTIMETERS,
+        icon="mdi:shoe-print",
+        formatter="format_session_metric",
+        device_class=SensorDeviceClass.DISTANCE,
+    ),
+]
+
 # =============================================================================
 # COMBINED DEFINITIONS
 # =============================================================================
@@ -246,6 +399,7 @@ SENSOR_DEFINITIONS: Final[list[SensorDef]] = [
     *_ACTIVITY_SENSORS,
     *_HEART_RATE_SENSORS,
     *_SLEEP_SENSORS,
+    *_WORKOUT_SESSION_SENSORS,
 ]
 
 # =============================================================================
