@@ -69,16 +69,33 @@ class ZeppDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             name=device_name,
         )
 
+        # Child DeviceInfo for Workout Tracker
+        self._workout_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{self.entry_id}_workout")},
+            name=f"{device_name} Workout",
+            manufacturer=DEFAULT_MANUFACTURER,
+            model="Workout Tracker",
+            via_device=(DOMAIN, self.entry_id),
+        )
+
         # Cached computed data (invalidated on each update)
         self._sorted_workout_history: list[dict[str, Any]] | None = None
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return shared device info for all entities.
+        """Return shared device info for all main entities.
 
         All sensors use this to link to the same device in HA.
         """
         return self._device_info
+
+    @property
+    def workout_device_info(self) -> DeviceInfo:
+        """Return device info for workout entities.
+        
+        Links as a child device to the main watch.
+        """
+        return self._workout_device_info
 
     @property
     def sorted_workout_history(self) -> list[dict[str, Any]]:

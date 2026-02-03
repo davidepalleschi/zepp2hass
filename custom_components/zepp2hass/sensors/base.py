@@ -46,6 +46,7 @@ class ZeppSensorBase(CoordinatorEntity["ZeppDataUpdateCoordinator"], SensorEntit
         name: str,
         icon: str | None = None,
         unit: str | None = None,
+        device_info: DeviceInfo | None = None,
     ) -> None:
         """Initialize the base sensor.
 
@@ -55,6 +56,7 @@ class ZeppSensorBase(CoordinatorEntity["ZeppDataUpdateCoordinator"], SensorEntit
             name: Human-readable sensor name (appended to device name)
             icon: MDI icon name (e.g., "mdi:heart-pulse")
             unit: Unit of measurement (e.g., "bpm", "%")
+            device_info: Optional custom device info (overrides coordinator's default)
         """
         super().__init__(coordinator)
 
@@ -62,11 +64,12 @@ class ZeppSensorBase(CoordinatorEntity["ZeppDataUpdateCoordinator"], SensorEntit
         self._attr_unique_id = f"{DOMAIN}_{coordinator.entry_id}_{key}"
         self._attr_icon = icon
         self._attr_native_unit_of_measurement = unit
+        self._custom_device_info = device_info
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information for entity registry."""
-        return self.coordinator.device_info
+        return self._custom_device_info or self.coordinator.device_info
 
     @property
     def _data(self) -> dict[str, Any] | None:

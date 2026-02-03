@@ -27,6 +27,7 @@ from .sensors import (
     WebhookUrlSensor,
     SENSOR_DEFINITIONS,
     SENSORS_WITH_TARGET,
+    _WORKOUT_SESSION_SENSORS,
 )
 
 if TYPE_CHECKING:
@@ -57,15 +58,22 @@ async def async_setup_entry(
     # Build sensor list: definition-based + specialized sensors
     sensors = [
         # Sensors from definitions (JSON path based)
-        *(Zepp2HassSensor(coordinator, sensor_def) for sensor_def in SENSOR_DEFINITIONS),
+        # Sensors from definitions (JSON path based)
+        *(Zepp2HassSensor(coordinator, sensor_def) for sensor_def in SENSOR_DEFINITIONS if sensor_def not in _WORKOUT_SESSION_SENSORS),
+        
+        # Workout Session Sensors (on new device)
+        *(Zepp2HassSensor(coordinator, sensor_def, device_info=coordinator.workout_device_info) for sensor_def in _WORKOUT_SESSION_SENSORS),
+
         # Sensors with target values
         *(Zepp2HassSensorWithTarget(coordinator, sensor_def) for sensor_def in SENSORS_WITH_TARGET),
         # Specialized sensors with custom logic
         DeviceInfoSensor(coordinator),
         UserInfoSensor(coordinator),
-        WorkoutLastSensor(coordinator),
-        WorkoutHistorySensor(coordinator),
-        WorkoutStatusSensor(coordinator),
+        # Workout special sensors (on new device)
+        WorkoutLastSensor(coordinator, device_info=coordinator.workout_device_info),
+        WorkoutHistorySensor(coordinator, device_info=coordinator.workout_device_info),
+        WorkoutStatusSensor(coordinator, device_info=coordinator.workout_device_info),
+        
         BloodOxygenSensor(coordinator),
         PAISensor(coordinator),
         # Diagnostic sensor for webhook URL

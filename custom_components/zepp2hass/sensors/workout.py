@@ -30,7 +30,11 @@ class WorkoutStatusSensor(ZeppSensorBase):
     _VO2_MAX_PATH = "workout.status.vo2Max"
     _RECOVERY_TIME_PATH = "workout.status.fullRecoveryTime"
 
-    def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
+    def __init__(
+        self,
+        coordinator: ZeppDataUpdateCoordinator,
+        device_info: Any = None,
+    ) -> None:
         """Initialize the workout status sensor."""
         super().__init__(
             coordinator=coordinator,
@@ -38,6 +42,7 @@ class WorkoutStatusSensor(ZeppSensorBase):
             name="Training Load",
             icon="mdi:dumbbell",
             unit="points",
+            device_info=device_info,
         )
 
     @property
@@ -82,13 +87,18 @@ class WorkoutLastSensor(ZeppSensorBase):
     Attributes include start time, date, duration.
     """
 
-    def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
+    def __init__(
+        self,
+        coordinator: ZeppDataUpdateCoordinator,
+        device_info: Any = None,
+    ) -> None:
         """Initialize the last workout sensor."""
         super().__init__(
             coordinator=coordinator,
             key="last_workout",
             name="Last Workout",
             icon="mdi:run",
+            device_info=device_info,
         )
 
     @property
@@ -138,7 +148,11 @@ class WorkoutHistorySensor(ZeppSensorBase):
     _MAX_RECENT_WORKOUTS = 10
     _SECTION = "workout"
 
-    def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
+    def __init__(
+        self,
+        coordinator: ZeppDataUpdateCoordinator,
+        device_info: Any = None,
+    ) -> None:
         """Initialize the workout history sensor."""
         super().__init__(
             coordinator=coordinator,
@@ -146,6 +160,7 @@ class WorkoutHistorySensor(ZeppSensorBase):
             name="Workout Count",
             icon="mdi:counter",
             unit="workouts",
+            device_info=device_info,
         )
 
     @property
