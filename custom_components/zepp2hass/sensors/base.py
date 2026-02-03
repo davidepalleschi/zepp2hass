@@ -124,6 +124,7 @@ class Zepp2HassSensor(ZeppSensorBase):
         self,
         coordinator: ZeppDataUpdateCoordinator,
         sensor_def: SensorDef,
+        device_info: DeviceInfo | None = None,
     ) -> None:
         """Initialize the sensor from definition.
 
@@ -137,6 +138,7 @@ class Zepp2HassSensor(ZeppSensorBase):
             name=sensor_def.name,
             icon=sensor_def.icon,
             unit=sensor_def.unit,
+            device_info=device_info,
         )
         self._json_path = sensor_def.json_path
         self._formatter = sensor_def.formatter
@@ -184,6 +186,7 @@ class Zepp2HassSensorWithTarget(ZeppSensorBase):
         self,
         coordinator: ZeppDataUpdateCoordinator,
         sensor_def: SensorWithTargetDef,
+        device_info: DeviceInfo | None = None,
     ) -> None:
         """Initialize the sensor with target from definition.
 
@@ -197,6 +200,7 @@ class Zepp2HassSensorWithTarget(ZeppSensorBase):
             name=sensor_def.name,
             icon=sensor_def.icon,
             unit=sensor_def.unit,
+            device_info=device_info,
         )
         self._current_path = sensor_def.current_path
         self._target_path = sensor_def.target_path
