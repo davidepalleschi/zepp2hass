@@ -22,6 +22,7 @@ from .definitions import (
     SensorWithTargetDef,
     SENSOR_DEFINITIONS,
     SENSORS_WITH_TARGET,
+    _WORKOUT_SESSION_SENSORS,
 )
 
 # Specialized sensor implementations
@@ -60,6 +61,7 @@ __all__ = [
     "SensorWithTargetDef",
     "SENSOR_DEFINITIONS",
     "SENSORS_WITH_TARGET",
+    "_WORKOUT_SESSION_SENSORS",
     # Specialized sensors
     "BloodOxygenSensor",
     "DeviceInfoSensor",

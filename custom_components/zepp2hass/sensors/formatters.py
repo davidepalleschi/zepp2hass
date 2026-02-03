@@ -267,16 +267,13 @@ def format_workout_state(value: Any) -> str:
     Expects a dict which might contain 'state_error'.
     Returns 'Active' if no error/state found, or the state value (capitalized).
     """
-    if not isinstance(value, dict):
-        return "Unknown"
-        
-    state = value.get("state_error")
-    if state:
-        return str(state).capitalize()
-        
-    # If it's a dict but no state_error, and we are reading from the 'parsed' node,
-    # it implies valid data is present (unless empty), so we assume Active.
-    # However, if it's empty, it might be waiting for data.
+    # If it's a dict, check for explicit error state
+    if isinstance(value, dict):
+        state = value.get("state_error")
+        if state:
+            return str(state).capitalize()
+    
+    # If we have any truthy value (scalar or dict without error), assume Active
     if value:
         return "Active"
         

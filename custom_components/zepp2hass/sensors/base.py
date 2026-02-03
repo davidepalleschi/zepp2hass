@@ -156,6 +156,19 @@ class Zepp2HassSensor(ZeppSensorBase):
         """Return the formatted sensor value."""
         raw_val, found = self._get_value(self._json_path)
         if not found:
+            # Debug log to help find correct paths for new devices
+            # Only log if we have data but path is missing (avoids noise during startup)
+            if self._data:
+                 # Check if the parent path exists to give better hint
+                parts = self._json_path.split(".")
+                if len(parts) > 1:
+                    parent_path = ".".join(parts[:-1])
+                    parent_val, parent_found = get_nested_value(self._data, parent_path)
+                    if parent_found:
+                         pass # Parent exists, so just this leaf is missing (common for some metrics)
+                    else:
+                         # Even parent is missing, might be structure mismatch
+                         pass
             return None
         return format_sensor_value(raw_val, self._formatter)
 
