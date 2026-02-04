@@ -299,12 +299,48 @@ def format_session_metric(value: Any) -> Any:
         # We'll return None and let HA handle it (or user can template it).
         return None
         
-    # Try common keys for value
+    # Keys to ignore when searching for the value
+    ignored_keys = {"name"}
+    
+    # Try to find the value key
+    target_value = None
+    
     if "value" in value:
-        return value["value"]
+        target_value = value["value"]
+    else:
+        # Find first key that is not in ignored_keys
+        for k, v in value.items():
+            if k not in ignored_keys:
+                target_value = v
+                break
+
+    if target_value is None:
+        return None
         
-    # Fallback: maybe the value is the whole valid dict? Unlikely for a metric.
-    return None
+    # Handle placeholder strings
+    if target_value == "--":
+        return None
+        
+    # Handle duration strings "MM:SS" or "HH:MM:SS"
+    # This is needed because the device sends formatted strings but we probably want seconds
+    if isinstance(target_value, str) and ":" in target_value:
+        try:
+            parts = target_value.split(":")
+            if len(parts) == 2: # MM:SS
+                return int(parts[0]) * 60 + int(parts[1])
+            elif len(parts) == 3: # HH:MM:SS
+                return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        except (ValueError, IndexError):
+            pass # Fall back to returning string if parsing fails
+            
+    # Try numeric conversion (preserves float/int types, converts strings if possible)
+    # This helps with values like "0.00" being returned as float 0.0
+    try:
+        return float(target_value)
+    except (ValueError, TypeError):
+        pass
+
+    return target_value
 
 
 # --- Formatter registry ---

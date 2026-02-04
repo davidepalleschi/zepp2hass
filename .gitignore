@@ -1,2 +1,4 @@
 *.ipynb
 __pycache__/
+update_tag.sh
+test_formatters.py
