@@ -5,12 +5,12 @@ and exposes it as Home Assistant sensors.
 """
 from __future__ import annotations
 
-from collections import deque
+
 import asyncio
 import json
 import logging
 from pathlib import Path
-import time
+
 from typing import Any
 
 from aiohttp import web
@@ -30,8 +30,6 @@ from homeassistant.helpers.network import get_url
 from .const import (
     DOMAIN,
     PLATFORMS,
-    RATE_LIMIT_REQUESTS,
-    RATE_LIMIT_WINDOW_SECONDS,
     DEFAULT_MANUFACTURER,
     DEFAULT_MODEL,
     CONF_BASE_URL,
@@ -62,44 +60,7 @@ async def _load_dashboard_template() -> str:
     return _DASHBOARD_TEMPLATE
 
 
-class RateLimiter:
-    """Simple sliding window rate limiter for webhook protection.
 
-    Uses a deque to track request timestamps within a sliding window.
-    Thread-safe for async use within Home Assistant's event loop.
-    """
-
-    __slots__ = ("_requests", "_max_requests", "_window_seconds")
-
-    def __init__(self, max_requests: int, window_seconds: int) -> None:
-        """Initialize rate limiter.
-
-        Args:
-            max_requests: Maximum allowed requests within window
-            window_seconds: Time window in seconds
-        """
-        self._requests: deque[float] = deque()
-        self._max_requests = max_requests
-        self._window_seconds = window_seconds
-
-    def is_allowed(self) -> bool:
-        """Check if a new request is allowed within rate limits.
-
-        Returns:
-            True if request is allowed, False if rate limit exceeded
-        """
-        now = time.monotonic()
-        cutoff = now - self._window_seconds
-
-        # Remove expired requests from front of deque
-        while self._requests and self._requests[0] < cutoff:
-            self._requests.popleft()
-
-        if len(self._requests) >= self._max_requests:
-            return False
-
-        self._requests.append(now)
-        return True
 
 
 # --- Entry setup/unload ---
@@ -171,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Initialize components
     coordinator = ZeppDataUpdateCoordinator(hass, entry, device_name)
-    rate_limiter = RateLimiter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
+
 
     # Store entry data
     hass.data[DOMAIN][entry_id] = {
@@ -179,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "webhook_id": webhook_id,
         "webhook_path": webhook_path,
         "webhook_full_url": full_webhook_url,
-        "rate_limiter": rate_limiter,
+
     }
 
     # Register webhook using Home Assistant's native webhook component
@@ -279,17 +240,7 @@ def _create_webhook_handler(hass: HomeAssistant, entry_id: str):
             return web.Response(text=dashboard_html, content_type="text/html")
 
         # Handle POST requests - process webhook payload
-        # Rate limiting check
-        rate_limiter: RateLimiter = entry_data["rate_limiter"]
-        if not rate_limiter.is_allowed():
-            _LOGGER.warning("Rate limit exceeded for %s", entry_id)
-            return web.json_response(
-                {
-                    "error": "Rate limit exceeded",
-                    "message": f"Max {RATE_LIMIT_REQUESTS} requests per {RATE_LIMIT_WINDOW_SECONDS}s",
-                },
-                status=429,
-            )
+
 
         # Parse JSON payload
         try:
