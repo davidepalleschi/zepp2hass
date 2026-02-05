@@ -223,19 +223,29 @@ Expected response:
 
 <details>
 <summary>Click to expand Debug Mode instructions</summary>
-
+   
 **How to help with debugging:**
 
 1.  **Uninstall the Store version** of the app from your watch.
 2.  **Enable Developer Mode** in the Zepp App on your phone:
     - Go to **Profile > Settings > About**.
     - Tap the **Zepp icon 7 times** until a "Developer Mode" message appears.
+3. **Download the App:**
+   - Go to to **Device > General > Developer Mode**.
+   - Click the **+** icon in the top right corner and select **Scan** to scan the QR code.
 
-Now go to **Device > General > Developer Mode** > click the **+** in top right > **Scan** to scan the qr code.
 
-Please paste the screenshot of the console.
+**How to access and share logs:**
 
-## </details>
+Once the QR code is scanned, follow these steps to view the real-time logs:
+
+* Stay within the **Developer Mode** menu and switch to the **Mini Program** tab.
+* After configuring the **Settings**, tap on the mini app icon from the list.
+* Select **Device logs**.
+* Click **Enable**: now, interact with the app on your watch to reproduce the issue.
+* **Screenshot:** Please capture and send a screenshot of the logs that appear in the console.
+
+</details>
 
 ## 🤝 Contributing
 
