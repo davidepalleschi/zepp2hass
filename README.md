@@ -43,15 +43,15 @@ Each webhook includes a minimalist web interface accessible via your browser, sp
 
 The integration creates multiple sensor types organized by category:
 
-| Category | Sensors |
-|----------|---------|
-| **Health** | Heart Rate (last, resting, max), Body Temperature, Stress, Blood Oxygen |
-| **Activity** | Steps, Calories, Fat Burning, Stands, Distance (all with goal targets) |
-| **Sleep** | Sleep Score, Total Duration, Deep Sleep, Sleep Start/End Time |
-| **Workout** | Training Load, Last Workout, Workout History, VO2 Max |
-| **Device** | Battery, Screen Status/AOD/Brightness, Device Info, User Info |
-| **PAI** | Weekly PAI score with daily PAI as attribute |
-| **Binary Sensors** | Is Wearing, Is Moving, Is Sleeping |
+| Category           | Sensors                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| **Health**         | Heart Rate (last, resting, max), Body Temperature, Stress, Blood Oxygen |
+| **Activity**       | Steps, Calories, Fat Burning, Stands, Distance (all with goal targets)  |
+| **Sleep**          | Sleep Score, Total Duration, Deep Sleep, Sleep Start/End Time           |
+| **Workout**        | Training Load, Last Workout, Workout History, VO2 Max                   |
+| **Device**         | Battery, Screen Status/AOD/Brightness, Device Info, User Info           |
+| **PAI**            | Weekly PAI score with daily PAI as attribute                            |
+| **Binary Sensors** | Is Wearing, Is Moving, Is Sleeping                                      |
 
 ---
 
@@ -81,11 +81,13 @@ The integration creates multiple sensor types organized by category:
 After adding the integration, you can get your webhook URL:
 
 **Integration Interface** - Go to Settings → Integrations → Zepp2Hass → Click on device name → Under "Device Info" click "Visit". This will take you to the web interface.
-   
+
 The URL format is:
+
 ```
 http://YOUR_HOME_ASSISTANT_BASE_URL/api/webhook/WEBHOOK_ID
 ```
+
 > **Advanced:** You can change the **Base URL** at any time by going to **Settings** → **Devices & Services** → **Zepp2Hass** → **Configure**. The integration will automatically reload to apply the new URL.
 
 ### Step 3: Install and Configure the Zepp2Hass App on Your Watch
@@ -121,23 +123,27 @@ To send data from your Zepp smartwatch to Home Assistant, you need to install th
 <summary>Click to see supported devices</summary>
 
 ### 🏃 Serie Balance
+
 - Amazfit Balance
 - Amazfit Balance 2
 - Amazfit Balance 2 XT
 
 ### 🦕 Serie T-Rex (Rugged)
+
 - Amazfit T-Rex Ultra
 - Amazfit T-Rex 3
 - Amazfit T-Rex 3 Pro (44mm)
 - Amazfit T-Rex 3 Pro (48mm)
 
 ### 🐆 Serie Cheetah (Running)
+
 - Amazfit Cheetah (Round)
 - Amazfit Cheetah (Square)
 - Amazfit Cheetah Pro
 - Amazfit Cheetah Pro Kelvin Kiptum
 
 ### 💪 Serie Active
+
 - Amazfit Active
 - Amazfit Active Edge
 - Amazfit Active 2 (Round)
@@ -146,16 +152,19 @@ To send data from your Zepp smartwatch to Home Assistant, you need to install th
 - Amazfit Active 2 NFC (Square)
 
 ### ⌚ Serie GTR & GTS
+
 - Amazfit GTR 4
 - Amazfit GTR 4 Limited Edition
 - Amazfit GTS 4
 
 ### 📟 Serie Bip
+
 - Amazfit Bip 5 Unity
 - Amazfit Bip 5 Core
 - Amazfit Bip 6
 
 ### 🎯 Other Models
+
 - Amazfit Falcon
 
 </details>
@@ -165,6 +174,7 @@ To send data from your Zepp smartwatch to Home Assistant, you need to install th
 ## 🎯 Usage Examples
 
 **Battery low automation:**
+
 ```yaml
 automation:
   - alias: "Zepp Battery Low"
@@ -177,6 +187,7 @@ automation:
         data:
           message: "🔋 Watch battery low: {{ states('sensor.my_zepp_watch_battery') }}%"
 ```
+
 ---
 
 ## 🔧 Troubleshooting
@@ -203,10 +214,28 @@ curl -X POST http://YOUR_HA_IP:8123/api/webhook/YOUR_WEBHOOK_ID \
 > **Note:** Replace `YOUR_WEBHOOK_ID` with the actual webhook ID from your integration. You can find it by visiting the webhook URL in your browser (GET request) or checking Home Assistant logs.
 
 Expected response:
+
 ```json
-{"status": "ok"}
+{ "status": "ok" }
 ```
----
+
+### 🐞 Debug Mode & Advanced Troubleshooting
+
+<details>
+<summary>Click to expand Debug Mode instructions</summary>
+
+**How to help with debugging:**
+
+1.  **Uninstall the Store version** of the app from your watch.
+2.  **Enable Developer Mode** in the Zepp App on your phone:
+    - Go to **Profile > Settings > About**.
+    - Tap the **Zepp icon 7 times** until a "Developer Mode" message appears.
+
+Now go to **Device > General > Developer Mode** > click the **+** in top right > **Scan** to scan the qr code.
+
+Please paste the screenshot of the console.
+
+## </details>
 
 ## 🤝 Contributing
 
@@ -219,8 +248,6 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-
 
 ## 📞 Support
 
