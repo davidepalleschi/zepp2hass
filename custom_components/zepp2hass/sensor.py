@@ -19,6 +19,7 @@ from .sensors import (
     Zepp2HassSensorWithTarget,
     DeviceInfoSensor,
     UserInfoSensor,
+    WeightSensor,
     WorkoutHistorySensor,
     WorkoutStatusSensor,
     WorkoutLastSensor,
@@ -72,6 +73,7 @@ async def async_setup_entry(
         # Specialized sensors with custom logic
         DeviceInfoSensor(coordinator),
         UserInfoSensor(coordinator),
+        WeightSensor(coordinator),
         # Workout special sensors (on new device)
         WorkoutLastSensor(coordinator, device_info=coordinator.workout_device_info),
         WorkoutHistorySensor(coordinator, device_info=coordinator.workout_device_info),

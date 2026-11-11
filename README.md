@@ -43,15 +43,15 @@ Each webhook includes a minimalist web interface accessible via your browser, sp
 
 The integration creates multiple sensor types organized by category:
 
-| Category           | Sensors                                                                 |
-| ------------------ | ----------------------------------------------------------------------- |
-| **Health**         | Heart Rate (last, resting, max), Body Temperature, Stress, Blood Oxygen |
-| **Activity**       | Steps, Calories, Fat Burning, Stands, Distance (all with goal targets)  |
-| **Sleep**          | Sleep Score, Total Duration, Deep Sleep, Sleep Start/End Time           |
-| **Workout**        | Training Load, Last Workout, Workout History, VO2 Max                   |
-| **Device**         | Battery, Screen Status/AOD/Brightness, Device Info, User Info           |
-| **PAI**            | Weekly PAI score with daily PAI as attribute                            |
-| **Binary Sensors** | Is Wearing, Is Moving, Is Sleeping                                      |
+| Category           | Sensors                                                                         |
+| ------------------ | ------------------------------------------------------------------------------- |
+| **Health**         | Heart Rate (last, resting, max), Body Temperature, Stress, Blood Oxygen, Weight |
+| **Activity**       | Steps, Calories, Fat Burning, Stands, Distance (all with goal targets)          |
+| **Sleep**          | Sleep Score, Total Duration, Deep Sleep, Sleep Start/End Time                   |
+| **Workout**        | Training Load, Last Workout, Workout History, VO2 Max                           |
+| **Device**         | Battery, Screen Status/AOD/Brightness, Device Info, User Info                   |
+| **PAI**            | Weekly PAI score with daily PAI as attribute                                    |
+| **Binary Sensors** | Is Wearing, Is Moving, Is Sleeping                                              |
 
 ---
 
