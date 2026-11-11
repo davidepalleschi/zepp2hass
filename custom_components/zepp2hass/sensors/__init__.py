@@ -29,7 +29,7 @@ from .definitions import (
 from .blood_oxygen import BloodOxygenSensor
 from .device import DeviceInfoSensor
 from .pai import PAISensor
-from .user import UserInfoSensor
+from .user import UserInfoSensor, WeightSensor
 from .webhook import WebhookUrlSensor
 from .sleep import SleepScoreSensor, SleepStageDurationSensor
 from .raw import RawDataSensor
@@ -69,6 +69,7 @@ __all__ = [
     "DeviceInfoSensor",
     "PAISensor",
     "UserInfoSensor",
+    "WeightSensor",
     "WebhookUrlSensor",
     "SleepScoreSensor",
     "SleepStageDurationSensor",

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
+from homeassistant.components.sensor import SensorStateClass
 from homeassistant.helpers.entity import EntityCategory
 
 from .base import ZeppSensorBase
@@ -15,7 +16,6 @@ from ..const import DataSection
 
 if TYPE_CHECKING:
     from ..coordinator import ZeppDataUpdateCoordinator
-
 
 # Declarative mapping for user attributes
 _USER_ATTR_MAPPING: AttributeMapping = {
@@ -34,7 +34,6 @@ _USER_ATTR_MAPPING: AttributeMapping = {
     # Unique identifier
     "uuid": "uuid",
 }
-
 
 class UserInfoSensor(ZeppSensorBase):
     """Consolidated User Information sensor.
@@ -71,3 +70,30 @@ class UserInfoSensor(ZeppSensorBase):
         """Return extra state attributes (profile info)."""
         user_data = self._get_section(self._SECTION)
         return extract_attributes(user_data, _USER_ATTR_MAPPING) if user_data else {}
+
+
+class WeightSensor(ZeppSensorBase):
+    """Track the weight reported by the user's Zepp profile."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: ZeppDataUpdateCoordinator) -> None:
+        """Initialize the weight sensor."""
+        super().__init__(coordinator, key="weight", name="Weight", icon="mdi:scale-bathroom")
+
+    @property
+    def available(self) -> bool:
+        """Return whether the profile contains a weight."""
+        return self._is_coordinator_ready() and self._get_value("user.weight")[1]
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of the reported weight when supplied by the watch."""
+        unit, _ = self._get_value("user.weight_unit")
+        return unit
+
+    @property
+    def native_value(self) -> int | float | None:
+        """Return the profile weight, treating Zepp's zero sentinel as unknown."""
+        value, _ = self._get_value("user.weight")
+        return None if value == 0 else value
